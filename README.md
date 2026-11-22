@@ -36,6 +36,7 @@ Follow any subset of the four products, tune the polling interval and alert mode
 
 - **Service hosting**: register local agent tools as long-running services and manage start, stop, restart, and status in one place
 - **Reset monitor**: watch AIHOT reset announcements for Codex, Antigravity, Claude and Grok Bot, and get notified when a reset is announced
+- **Quota tracking**: weekly pools for Gemini Web, Antigravity, Grok and Grok Bot with time-vs-usage pacing, burn rate, estimated exhaustion and threshold alerts
 - **Restart without downtime**: closing AgentHub does not kill running children; the next launch re-adopts them by PID instead of spawning duplicates
 - **Centralized logs**: child stdout/stderr is written to durable log files and streamed into the UI in real time
 - **Failure recovery**: restart policies for always, on-failure, and never, with a configurable retry limit
@@ -49,7 +50,7 @@ Follow any subset of the four products, tune the polling interval and alert mode
 - **Start/Stop/Restart**: full control over process lifecycle with graceful shutdown support
 - **Auto-start**: configure processes to start automatically when the application launches
 - **Restart Policies**: support for `always`, `on_failure`, and `never` restart policies
-- **Process Monitoring**: real-time status monitoring with PID, restart count, and error tracking
+- **Process Monitoring**: real-time status monitoring with PID, restart count, error tracking, and working-set memory sampled on manual refresh
 - **Import/Export**: export process configurations as JSON; review a file before importing and choose whether same-name processes are skipped or overwritten
 
 ### Reset Monitor
@@ -61,6 +62,13 @@ Follow any subset of the four products, tune the polling interval and alert mode
 
 The monitor reads [AIHOT](https://aihot.news/resets). AIHOT data is free for personal,
 non-commercial use with attribution; commercial use requires authorization from AIHOT.
+
+### Quota Tracking
+- **One weekly view**: Gemini Web, Antigravity (Gemini / Claude+GPT / Argon groups), Grok and Grok Bot weekly pools in a single list; 5-hour pools are deliberately hidden
+- **Pacing bar**: green shows usage within the elapsed week, amber hatch marks room to spend faster, red hatch marks usage ahead of the clock, grey is what remains
+- **Local sources only**: reads a local `gemini-web2api-go` service, a local `Antigravity-Manager` API, and the `GrokUsagePet` snapshot; AgentHub never stores Google or xAI credentials
+- **History and alerts**: per-pool samples drive burn rate and estimated exhaustion; alerts at 80/90/100%; failed polls keep the previous values marked `stale`
+- **Deployment guide**: see [docs/deploy/quota-sources.md](docs/deploy/quota-sources.md) for what to install and how to wire each source
 
 ### Cross-Platform Support
 - **Windows** (amd64)

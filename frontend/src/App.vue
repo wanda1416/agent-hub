@@ -2,15 +2,17 @@
 import { ConfigProvider, theme } from 'ant-design-vue'
 import enUS from 'ant-design-vue/es/locale/en_US'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
-import { Cpu, Radar, Settings } from 'lucide-vue-next'
+import { Cpu, Gauge, Radar, Settings } from 'lucide-vue-next'
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref } from 'vue'
 import AppLogo from './components/AppLogo.vue'
 import MonitorAlert from './components/MonitorAlert.vue'
 import UpdateDownloadModal from './components/UpdateDownloadModal.vue'
 import MonitorPage from './views/Monitor.vue'
 import ProcessList from './views/Process.vue'
+import QuotaPage from './views/Quota.vue'
 import SettingsPage from './views/Setting.vue'
 import type { MonitorAlertPayload, MonitorSnapshot } from './types/monitor'
+import type { Snapshot as QuotaSnapshot } from './types/quota'
 import { trackVisit } from './services/analytics'
 import { autoCheckVersion, isAppStoreBuild } from './services/version'
 import { useAppStore } from './stores/app'
@@ -21,9 +23,11 @@ import { EventsEmit, EventsOff, EventsOn } from '../wailsjs/runtime/runtime'
 const appStore = useAppStore()
 
 // Active tab state
-type Tab = 'processes' | 'monitor' | 'settings'
+type Tab = 'processes' | 'monitor' | 'quota' | 'settings'
 const activeTab = ref<Tab>('processes')
 const monitorUnread = ref(false)
+const quotaUnread = ref(false)
+let previousQuotaPoolUsage = new Map<string, number>()
 
 // Strong alert state. Snoozing keeps the payload so the modal can reappear
 // after ten minutes without marking the announcement as acknowledged.
@@ -35,6 +39,7 @@ let snoozedPayload: MonitorAlertPayload | null = null
 function switchTab(tab: Tab) {
   activeTab.value = tab
   if (tab === 'monitor') monitorUnread.value = false
+  if (tab === 'quota') quotaUnread.value = false
 }
 
 function handleMonitorAlert(payload: MonitorAlertPayload) {
@@ -69,6 +74,31 @@ function snoozeAlert() {
 function viewMonitor() {
   acknowledgeAlert()
   switchTab('monitor')
+}
+
+function handleQuotaChanged(snapshot: QuotaSnapshot) {
+  const currentUsage = new Map<string, number>()
+  let hasNewThresholdAlert = false
+  const thresholds = appStore.quotaConfig.alertThresholds
+
+  for (const pool of snapshot?.pools || []) {
+    const usedPercent = pool.usedPercent
+    if (typeof usedPercent !== 'number' || !Number.isFinite(usedPercent)) continue
+    const previous = previousQuotaPoolUsage.get(pool.id)
+    // Only a real crossing counts: the first snapshot of a pool that is already
+    // above the threshold must not light up the badge on every app start.
+    if (thresholds.some((threshold) => usedPercent >= threshold && previous !== undefined && previous < threshold)) {
+      hasNewThresholdAlert = true
+    }
+    currentUsage.set(pool.id, usedPercent)
+  }
+
+  previousQuotaPoolUsage = currentUsage
+  if (activeTab.value !== 'quota' && hasNewThresholdAlert) quotaUnread.value = true
+}
+
+function handleQuotaAlert() {
+  quotaUnread.value = true
 }
 
 // Track main page visit on mount
@@ -116,7 +146,7 @@ onMounted(async () => {
   })
 
   registerNavigate(async (path: string) => {
-    if (path === 'processes' || path === 'monitor' || path === 'settings') {
+    if (path === 'processes' || path === 'monitor' || path === 'quota' || path === 'settings') {
       switchTab(path)
     }
   })
@@ -126,7 +156,7 @@ onMounted(async () => {
   testActionSet('App.getActiveTab', () => activeTab.value)
   testActionSet('App.navigate', async (params: unknown) => {
     const { tab } = params as { tab: string }
-    if (tab === 'processes' || tab === 'monitor' || tab === 'settings') {
+    if (tab === 'processes' || tab === 'monitor' || tab === 'quota' || tab === 'settings') {
       switchTab(tab)
     }
     return activeTab.value
@@ -184,6 +214,9 @@ onMounted(async () => {
   EventsOn('monitor:alert', handleMonitorAlert)
   // 点击系统通知后跳转到监控页
   EventsOn('monitor:focus', () => switchTab('monitor'))
+  EventsOn('quota:changed', handleQuotaChanged)
+  EventsOn('quota:alert', handleQuotaAlert)
+  EventsOn('quota:focus', () => switchTab('quota'))
 })
 
 onUnmounted(() => {
@@ -193,6 +226,9 @@ onUnmounted(() => {
   EventsOff('monitor:changed')
   EventsOff('monitor:alert')
   EventsOff('monitor:focus')
+  EventsOff('quota:changed')
+  EventsOff('quota:alert')
+  EventsOff('quota:focus')
   if (snoozeTimer) window.clearTimeout(snoozeTimer)
   testActionUnset([
     'App.getConfig',
@@ -248,6 +284,17 @@ const themeConfig = computed(() => ({
             </a-button>
             <a-button
               class="tab-button"
+              :class="{ active: activeTab === 'quota' }"
+              type="text"
+              block
+              @click="switchTab('quota')"
+            >
+              <Gauge class="w-5 h-5" aria-hidden="true" />
+              <span class="tab-label">{{ appStore.t('quota.title') }}</span>
+              <span v-if="quotaUnread" class="tab-dot" aria-hidden="true" />
+            </a-button>
+            <a-button
+              class="tab-button"
               :class="{ active: activeTab === 'settings' }"
               type="text"
               block
@@ -269,6 +316,11 @@ const themeConfig = computed(() => ({
           <!-- Monitor View -->
           <div v-show="activeTab === 'monitor'" class="content-view">
             <MonitorPage />
+          </div>
+
+          <!-- Quota View -->
+          <div v-show="activeTab === 'quota'" class="content-view">
+            <QuotaPage />
           </div>
 
           <!-- Settings View -->

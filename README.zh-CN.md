@@ -36,6 +36,7 @@ AgentHub 是一个 Agent 主导的本地工具箱合集，使用 Wails、Go 和 
 
 - **常驻服务托管**：把 Agent 工具注册为常驻服务，统一管理启动、停止、重启和运行状态
 - **额度重置监控**：跟踪 AIHOT 上 Codex、Antigravity、Claude、Grok Bot 的重置公告，宣布重置时第一时间提醒
+- **额度跟踪**：统一查看 Gemini Web、Antigravity、Grok 与 Grok Bot 的周额度，并提供时间进度对比、消耗速度、预计用尽和阈值提醒
 - **退出不中断服务**：关闭 AgentHub 不会终止正在运行的子进程，再次启动时会按 PID 接管这些服务，不会重复拉起
 - **日志集中查看**：子进程的 stdout/stderr 写入持久化日志文件，界面实时跟随输出
 - **失败恢复**：支持始终重启、失败重启、从不重启三种策略，并可限制最大重试次数
@@ -50,7 +51,7 @@ AgentHub 是一个 Agent 主导的本地工具箱合集，使用 Wails、Go 和 
 - **启动/停止/重启**：完整的进程生命周期控制，支持优雅关闭
 - **自动启动**：配置进程在应用启动时自动运行
 - **重启策略**：支持 `always`（始终）、`on_failure`（失败时）和 `never`（从不）重启策略
-- **进程监控**：实时状态监控，包括 PID、重启次数和错误追踪
+- **进程监控**：实时状态监控，包括 PID、重启次数、错误追踪，以及点击刷新时采样的工作集内存
 - **导入/导出**：导出全部进程配置为 JSON；导入前可预览内容，同名进程可选择跳过或覆盖
 
 ### 额度重置监控
@@ -63,6 +64,14 @@ AgentHub 是一个 Agent 主导的本地工具箱合集，使用 Wails、Go 和 
 
 数据来源为 [AIHOT](https://aihot.news/resets)。AIHOT 数据面向个人非商业用途免费，
 使用时需标注来源；商业用途需取得 AIHOT 授权。
+
+### 额度跟踪
+
+- **只看周池**：Gemini Web、Antigravity（Gemini / Claude+GPT / Argon 分组）、Grok 与 Grok Bot 的周额度集中展示；5 小时池有意隐藏
+- **进度条**：绿色表示已用且仍在时间进度内，琥珀斜纹表示可以加速使用，红色斜纹表示已超出时间进度，灰色为剩余额度
+- **只读本地服务**：数据来自本地 `gemini-web2api-go`、本地 `Antigravity-Manager` API 和 `GrokUsagePet` 快照；AgentHub 不保存 Google 或 xAI 凭据
+- **历史与提醒**：按池记录采样以计算消耗速度和预计用尽；支持 80/90/100% 阈值提醒；采集失败时保留旧值并标记 `stale`
+- **部署方式**：见 [docs/deploy/quota-sources.md](docs/deploy/quota-sources.md)，包含每个数据源的下载与接入步骤
 
 ### 跨平台支持
 

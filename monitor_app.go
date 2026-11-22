@@ -51,7 +51,7 @@ func (a *App) startResetMonitor() {
 
 	if err := runtime.InitializeNotifications(a.ctx); err != nil {
 		a.LogSystemError("monitor.notifications", "failed to initialize notifications: "+err.Error())
-	} else if goruntime.GOOS == "darwin" && a.config.MonitorEnabled {
+	} else if goruntime.GOOS == "darwin" && (a.config.MonitorEnabled || a.config.Quota.Enabled) {
 		go func() {
 			if _, err := runtime.RequestNotificationAuthorization(a.ctx); err != nil {
 				a.LogSystemError("monitor.notifications", "notification authorization failed: "+err.Error())
@@ -59,8 +59,17 @@ func (a *App) startResetMonitor() {
 		}()
 	}
 
-	// Clicking any AgentHub notification brings the monitor into view.
-	runtime.OnNotificationResponse(a.ctx, func(runtime.NotificationResult) {
+	// Route notification clicks by their payload so quota alerts do not open the
+	// reset monitor (and monitor alerts retain their existing destination).
+	runtime.OnNotificationResponse(a.ctx, func(result runtime.NotificationResult) {
+		if result.Error != nil {
+			a.LogSystemError("notifications", "notification response failed: "+result.Error.Error())
+			return
+		}
+		if _, ok := result.Response.UserInfo["quota"]; ok {
+			a.focusQuotaNotification()
+			return
+		}
 		if a.currentConfig().MonitorAlertMode == monitor.ModeInApp {
 			return
 		}

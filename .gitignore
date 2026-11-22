@@ -34,6 +34,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Local share artifacts
+.trae-html-share-packages/
+
 # Go
 *.exe
 *.exe~

@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as AppAPI from '../../wailsjs/go/main/App'
-import { process as ProcessModels } from '../../wailsjs/go/models'
+import { process as ProcessModels, quota as QuotaModels } from '../../wailsjs/go/models'
 import { i18n } from '../plugins/i18n'
 import { trackError } from '../services/analytics'
+import type { Config as QuotaConfig } from '../types/quota'
 
 export type ProcessStatus = 'running' | 'stopped' | 'errored' | 'starting'
 
@@ -26,6 +27,11 @@ export interface ProcessItem {
   pid: number
   restarts: number
   lastError: string
+}
+
+export interface ProcessMemory {
+  pid: number
+  bytes: number
 }
 
 // How same-name processes are treated when importing a process file.
@@ -68,12 +74,56 @@ export interface ProcessImportResult {
   invalid: string[]
 }
 
+function defaultQuotaConfig(): QuotaConfig {
+  return {
+    enabled: true,
+    intervalMinutes: 5,
+    alertThresholds: [80, 90, 100],
+    gemini: {
+      enabled: false,
+      baseURL: 'http://127.0.0.1:8083',
+      adminToken: '',
+    },
+    antigravity: {
+      enabled: false,
+      baseURL: 'http://127.0.0.1:8045',
+      adminToken: '',
+    },
+    grok: {
+      enabled: false,
+      snapshotPath: '%LOCALAPPDATA%\\GrokUsagePet\\usage.json',
+      planKind: 'auto',
+    },
+  }
+}
+
+function normalizeQuotaConfig(config?: QuotaConfig | QuotaModels.Config | null): QuotaConfig {
+  const defaults = defaultQuotaConfig()
+  if (!config) return defaults
+  const planKind = config.grok?.planKind
+  return {
+    enabled: typeof config.enabled === 'boolean' ? config.enabled : defaults.enabled,
+    intervalMinutes: typeof config.intervalMinutes === 'number' ? config.intervalMinutes : defaults.intervalMinutes,
+    alertThresholds: Array.isArray(config.alertThresholds) ? [...config.alertThresholds] : defaults.alertThresholds,
+    gemini: { ...defaults.gemini, ...config.gemini },
+    antigravity: { ...defaults.antigravity, ...config.antigravity },
+    grok: {
+      ...defaults.grok,
+      ...config.grok,
+      planKind: planKind === 'x_unified' || planKind === 'legacy' ? planKind : 'auto',
+    },
+  }
+}
+
 export const useAppStore = defineStore('app', () => {
   const locale = ref<'zh' | 'en'>('zh')
   const isDark = ref(false)
   const autoStart = ref(false)
   const autoStartWSL = ref(false)
   const processes = ref<ProcessItem[]>([])
+  // Working-set memory per process, refreshed only on demand. Keyed by id and
+  // carrying the pid so a restarted process does not show the old number.
+  const processMemory = ref<Record<string, ProcessMemory>>({})
   const logs = ref<string[]>([])
 
   // Reset monitor settings mirrored from the backend configuration.
@@ -82,6 +132,9 @@ export const useAppStore = defineStore('app', () => {
   const monitorModels = ref<string[]>([...MONITOR_MODEL_IDS])
   const monitorAlertMode = ref<MonitorAlertMode>('notification')
   const monitorAlertSound = ref(true)
+
+  // Quota settings mirrored from the backend configuration.
+  const quotaConfig = ref<QuotaConfig>(defaultQuotaConfig())
 
   const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
 
@@ -133,6 +186,7 @@ export const useAppStore = defineStore('app', () => {
     monitorModels?: string[]
     monitorAlertMode?: string
     monitorAlertSound?: boolean
+    quota?: QuotaConfig | QuotaModels.Config
   }) => {
     if (config.theme) applyTheme(config.theme === 'dark' ? 'dark' : 'light')
     if (config.locale) applyLocale(config.locale === 'en' ? 'en' : 'zh')
@@ -145,6 +199,7 @@ export const useAppStore = defineStore('app', () => {
       monitorAlertMode.value = config.monitorAlertMode
     }
     if (typeof config.monitorAlertSound === 'boolean') monitorAlertSound.value = config.monitorAlertSound
+    if (config.quota) quotaConfig.value = normalizeQuotaConfig(config.quota)
   }
 
   // saveMonitorConfig persists a partial change and applies it locally right
@@ -177,6 +232,21 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const saveQuotaConfig = async (nextConfig: QuotaConfig) => {
+    const previous = normalizeQuotaConfig(quotaConfig.value)
+    const next = normalizeQuotaConfig(nextConfig)
+    quotaConfig.value = next
+    try {
+      await AppAPI.SetQuotaConfig(new QuotaModels.Config(next))
+    } catch (error) {
+      quotaConfig.value = previous
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      trackError(`Failed to save quota config: ${errorMsg}`)
+      console.error('Failed to save quota config:', error)
+      throw error
+    }
+  }
+
   // Load processes from backend
   const loadProcesses = async () => {
     try {
@@ -201,6 +271,23 @@ export const useAppStore = defineStore('app', () => {
       const errorMsg = error instanceof Error ? error.message : String(error)
       trackError(`Failed to load processes: ${errorMsg}`)
       console.error('Failed to load processes:', error)
+    }
+  }
+
+  // Sample working-set memory. Deliberately not part of the periodic status
+  // poll: the process page calls it on mount and from the refresh button only.
+  const loadProcessMemory = async () => {
+    try {
+      const items = await AppAPI.GetProcessMemory()
+      const next: Record<string, ProcessMemory> = {}
+      for (const item of items || []) {
+        next[item.id] = { pid: item.pid, bytes: item.bytes }
+      }
+      processMemory.value = next
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      trackError(`Failed to load process memory: ${errorMsg}`)
+      console.error('Failed to load process memory:', error)
     }
   }
 
@@ -378,6 +465,7 @@ export const useAppStore = defineStore('app', () => {
         monitorModels: config.monitorModels,
         monitorAlertMode: config.monitorAlertMode,
         monitorAlertSound: config.monitorAlertSound,
+        quota: config.quota,
       })
     } catch (error) {
       console.error('Failed to load settings:', error)
@@ -396,12 +484,14 @@ export const useAppStore = defineStore('app', () => {
     monitorModels,
     monitorAlertMode,
     monitorAlertSound,
+    quotaConfig,
     runningCount,
     stoppedCount,
     failedCount,
     setLocale,
     setTheme,
     saveMonitorConfig,
+    saveQuotaConfig,
     applyLocale,
     applyTheme,
     applyConfig,
@@ -415,6 +505,8 @@ export const useAppStore = defineStore('app', () => {
     startProcess,
     stopProcess,
     restartProcess,
+    processMemory,
+    loadProcessMemory,
     loadProcessLogs,
     exportProcesses,
     selectProcessImportFile,

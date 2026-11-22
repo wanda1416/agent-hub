@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 
 	"agenthub/internal/config"
 	"agenthub/internal/process"
+	"agenthub/internal/quota"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -75,6 +77,9 @@ func (a *App) applyConfigLocked(cfg config.AppConfig, origin string) error {
 	if a.resetMonitor != nil && !monitorConfigEqual(old, cfg) {
 		a.resetMonitor.UpdateConfig(monitorConfigFrom(cfg))
 	}
+	if a.quotaManager != nil && !reflect.DeepEqual(old.Quota, cfg.Quota) {
+		a.quotaManager.UpdateConfig(cfg.Quota)
+	}
 
 	if !configEqual(old, cfg) {
 		if origin == "" {
@@ -95,6 +100,7 @@ func normalizeConfig(cfg *config.AppConfig) {
 		cfg.Locale = "zh"
 	}
 	normalizeMonitorConfig(cfg)
+	normalizeQuotaConfig(cfg)
 }
 
 // normalizeMonitorConfig fills in the reset-monitor defaults. Configurations
@@ -139,6 +145,16 @@ func normalizeMonitorConfig(cfg *config.AppConfig) {
 	}
 }
 
+// normalizeQuotaConfig migrates configurations written before quota tracking
+// existed, then clamps collector values to the supported ranges.
+func normalizeQuotaConfig(cfg *config.AppConfig) {
+	if reflect.DeepEqual(cfg.Quota, quota.Config{}) {
+		cfg.Quota = quota.DefaultConfig()
+		return
+	}
+	cfg.Quota = quota.NormalizeConfig(cfg.Quota)
+}
+
 // monitorConfigEqual compares the reset-monitor settings only.
 func monitorConfigEqual(a, b config.AppConfig) bool {
 	if a.MonitorEnabled != b.MonitorEnabled ||
@@ -168,7 +184,8 @@ func configEqual(a, b config.AppConfig) bool {
 		a.MaxLogFiles != b.MaxLogFiles ||
 		a.MaxRestart != b.MaxRestart ||
 		a.RestartPolicy != b.RestartPolicy ||
-		!monitorConfigEqual(a, b) {
+		!monitorConfigEqual(a, b) ||
+		!reflect.DeepEqual(a.Quota, b.Quota) {
 		return false
 	}
 	if len(a.Processes) != len(b.Processes) {

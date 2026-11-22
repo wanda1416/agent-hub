@@ -44,6 +44,13 @@ type Snapshot struct {
 	StoppedAt  *time.Time `json:"stoppedAt,omitempty"`
 }
 
+// MemoryUsage is the working set sampled for one running process.
+type MemoryUsage struct {
+	ID    string `json:"id"`
+	PID   int    `json:"pid"`
+	Bytes uint64 `json:"bytes"`
+}
+
 // ProcessStats contains resource usage statistics
 type ProcessStats struct {
 	PID        int     `json:"pid"`

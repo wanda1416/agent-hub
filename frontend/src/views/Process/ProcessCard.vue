@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Button, Spin, Switch, Tag, Tooltip } from 'ant-design-vue'
-import { Eye, FileText, Hash, Pencil, Play, RefreshCw, RotateCw, Square } from 'lucide-vue-next'
+import { Eye, FileText, Hash, History, MemoryStick, Pencil, Play, Square, TimerReset } from 'lucide-vue-next'
+import { computed } from 'vue'
 import type { ProcessItem } from '@/stores/app'
 import { useAppStore } from '@/stores/app'
 import MiddleEllipsisViewer from '@/components/MiddleEllipsisViewer.vue'
@@ -18,6 +19,19 @@ const emit = defineEmits<{
 const appStore = useAppStore()
 
 const isActive = (p: ProcessItem) => p.status === 'running' || p.status === 'starting'
+
+// Only show memory sampled for the current pid: after a restart the stored
+// number belongs to the previous process and must not be reused.
+const memoryBytes = computed(() => {
+  const entry = appStore.processMemory[props.process.id]
+  if (!entry || entry.pid !== props.process.pid) return null
+  return entry.bytes
+})
+
+const formatMemory = (bytes: number) => {
+  const mb = bytes / 1024 / 1024
+  return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(1)} MB`
+}
 
 const getStatusConfig = (status: string) => {
   if (status === 'running' || status === 'starting') {
@@ -77,8 +91,12 @@ const onAutoStartChange = (checked: boolean | string | number) => {
             <Hash class="w-3 h-3" aria-hidden="true" />
             <span>PID: {{ process.pid }}</span>
           </div>
+          <div v-if="process.pid > 0" class="meta-item" :title="appStore.t('processes.memoryHint')">
+            <MemoryStick class="w-3 h-3" aria-hidden="true" />
+            <span>{{ appStore.t('processes.memory') }}: {{ memoryBytes === null ? '--' : formatMemory(memoryBytes) }}</span>
+          </div>
           <div v-if="process.restarts > 0" class="meta-item">
-            <RefreshCw class="w-3 h-3" aria-hidden="true" />
+            <History class="w-3 h-3" aria-hidden="true" />
             <span>{{ appStore.t('processes.restarts') }}: {{ process.restarts }}</span>
           </div>
         </div>
@@ -92,7 +110,7 @@ const onAutoStartChange = (checked: boolean | string | number) => {
             </Tooltip>
             <Tooltip :title="appStore.t('actions.restart')">
               <Button :disabled="process.status === 'stopped'" :aria-label="appStore.t('actions.restart')" @click="emit('restart', process)">
-                <RotateCw class="w-4 h-4" aria-hidden="true" />
+                <TimerReset class="w-4 h-4" aria-hidden="true" />
               </Button>
             </Tooltip>
             <Tooltip :title="appStore.t('actions.logs')">

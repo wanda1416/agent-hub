@@ -1,6 +1,9 @@
 package config
 
-import "agenthub/internal/process"
+import (
+	"agenthub/internal/process"
+	"agenthub/internal/quota"
+)
 
 type AppConfig struct {
 	Locale        string               `json:"locale"`
@@ -22,6 +25,8 @@ type AppConfig struct {
 	MonitorModels     []string `json:"monitorModels"`
 	MonitorAlertMode  string   `json:"monitorAlertMode"` // inapp | notification | popup
 	MonitorAlertSound bool     `json:"monitorAlertSound"`
+
+	Quota quota.Config `json:"quota"`
 }
 
 // DefaultMonitorModels returns the four models tracked by the AIHOT reset
@@ -45,5 +50,6 @@ func DefaultConfig() AppConfig {
 		MonitorModels:     DefaultMonitorModels(),
 		MonitorAlertMode:  "notification",
 		MonitorAlertSound: true,
+		Quota:             quota.DefaultConfig(),
 	}
 }

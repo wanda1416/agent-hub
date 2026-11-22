@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { Button, InputSearch, Segmented, Switch, message } from 'ant-design-vue'
-import { Cpu, Download, Plus, Upload } from 'lucide-vue-next'
+import { Cpu, Download, Plus, RefreshCw, Upload } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { ProcessImportCandidate, ProcessImportMode, ProcessImportPreview, ProcessItem, ProcessStatus } from '../stores/app'
 import { useAppStore } from '../stores/app'
@@ -33,6 +33,7 @@ const detailProcessId = ref('')
 const searchQuery = ref('')
 const statusFilter = ref<StatusFilter>('all')
 const loadingProcessId = ref<string | null>(null)
+const refreshing = ref(false)
 // Status grouping is a preference: grouped view keeps active processes on top,
 // flat view keeps every card in a fixed slot so nothing jumps on start/stop.
 const groupByStatus = ref(localStorage.getItem(GROUP_BY_STATUS_KEY) !== '0')
@@ -113,9 +114,21 @@ const onStatusFilterChange = (value: string | number) => {
   statusFilter.value = value as StatusFilter
 }
 
+// Manual refresh: reloads status and samples memory. The 3-second status poll
+// deliberately leaves memory alone so the number only changes on this click.
+const refreshProcesses = async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([appStore.loadProcesses(), appStore.loadProcessMemory()])
+  } finally {
+    refreshing.value = false
+  }
+}
+
 // Load processes on mount
 onMounted(() => {
   appStore.loadProcesses()
+  appStore.loadProcessMemory()
   // Auto-refresh every 3 seconds
   setInterval(() => {
     appStore.loadProcesses()
@@ -342,6 +355,10 @@ const handleImportConfirm = async (mode: ProcessImportMode) => {
           class="search-input"
           allow-clear
         />
+        <Button :loading="refreshing" :title="appStore.t('processes.refreshHint')" @click="refreshProcesses">
+          <template #icon><RefreshCw class="w-4 h-4" aria-hidden="true" /></template>
+          {{ appStore.t('actions.refresh') }}
+        </Button>
         <Button
           :loading="exporting"
           :disabled="appStore.processes.length === 0"

@@ -21,6 +21,7 @@ import (
 	"agenthub/internal/monitor"
 	"agenthub/internal/platform"
 	"agenthub/internal/process"
+	"agenthub/internal/quota"
 	"agenthub/internal/service"
 	"agenthub/internal/store"
 	"agenthub/internal/updater"
@@ -49,6 +50,7 @@ type App struct {
 	wailsLogger   *logging.WailsLogger
 	updateMgr     *updater.Manager
 	resetMonitor  *monitor.Watcher
+	quotaManager  *quota.Manager
 	dataDir       string
 	// configMu serializes configuration writes. Reads and writes can originate
 	// from the GUI, the CLI control server and the tray at the same time, so
@@ -222,8 +224,9 @@ func (a *App) startup(ctx context.Context) {
 	// Start automation test HTTP server (no-op without autotest build tag)
 	startAutotestServer(ctx, a)
 
-	// Start the reset monitor after the context exists so it can notify.
+	// Start background collectors after the context exists so they can notify.
 	a.startResetMonitor()
+	a.startQuotaManager()
 }
 
 // Greet returns a greeting for the given name
@@ -418,6 +421,14 @@ func (a *App) notifyProcessesChanged() {
 func (a *App) ListProcesses() []process.Snapshot {
 	defer a.recoverPanic("ListProcesses")
 	return a.pm.List()
+}
+
+// GetProcessMemory samples the working set of running processes. The frontend
+// only calls it on page load and when the refresh button is pressed, so memory
+// numbers stay manual instead of changing with the status poll.
+func (a *App) GetProcessMemory() []process.MemoryUsage {
+	defer a.recoverPanic("GetProcessMemory")
+	return a.pm.MemoryUsage()
 }
 
 // GetProcessLogs returns logs for a specific process
@@ -1145,8 +1156,9 @@ func (a *App) shutdown(ctx context.Context) {
 	// Stop the CLI control server and remove its auth file
 	a.stopControlServer()
 
-	// Stop the reset monitor and release notification resources.
+	// Stop background collectors and release notification resources.
 	a.stopResetMonitor()
+	a.stopQuotaManager()
 	if a.ctx != nil {
 		runtime.CleanupNotifications(a.ctx)
 	}

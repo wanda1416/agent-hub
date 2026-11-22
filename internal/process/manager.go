@@ -179,6 +179,30 @@ func (m *Manager) List() []Snapshot {
 	return snapshots
 }
 
+// MemoryUsage samples the working set of every running process. It is meant
+// for on-demand refresh only: reading process counters is more expensive than
+// the status list, so the periodic poll does not call it.
+func (m *Manager) MemoryUsage() []MemoryUsage {
+	m.mu.RLock()
+	pids := make(map[string]int, len(m.entries))
+	for id, item := range m.entries {
+		if item.pid > 0 {
+			pids[id] = item.pid
+		}
+	}
+	m.mu.RUnlock()
+
+	usages := make([]MemoryUsage, 0, len(pids))
+	for id, pid := range pids {
+		bytes, err := memoryUsage(pid)
+		if err != nil {
+			continue
+		}
+		usages = append(usages, MemoryUsage{ID: id, PID: pid, Bytes: bytes})
+	}
+	return usages
+}
+
 func (m *Manager) Register(def Definition) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
