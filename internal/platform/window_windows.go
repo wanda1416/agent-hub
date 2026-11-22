@@ -27,7 +27,38 @@ var (
 	procSetForeground            = user32.NewProc("SetForegroundWindow")
 	procGetWindowThreadProcessId = user32.NewProc("GetWindowThreadProcessId")
 	procPostThreadMessageW       = user32.NewProc("PostThreadMessageW")
+	procFlashWindowEx            = user32.NewProc("FlashWindowEx")
 )
+
+const (
+	flashwAll       = 0x00000003
+	flashwTimer     = 0x00000001
+	flashwTimerNoFG = 0x00000002
+)
+
+type flashWindowInfo struct {
+	size    uint32
+	hwnd    uintptr
+	flags   uint32
+	count   uint32
+	timeout uint32
+}
+
+// FlashMainWindow flashes the taskbar button until the window gets focus. It
+// backs the strong alert mode, where a reset announcement must be noticed even
+// when the window is behind other applications.
+func FlashMainWindow() {
+	hwnd := findMainWindow()
+	if hwnd == 0 {
+		return
+	}
+	info := flashWindowInfo{
+		size:  uint32(unsafe.Sizeof(flashWindowInfo{})),
+		hwnd:  hwnd,
+		flags: flashwAll | flashwTimer | flashwTimerNoFG,
+	}
+	procFlashWindowEx.Call(uintptr(unsafe.Pointer(&info)))
+}
 
 // findMainWindow returns the HWND of the Wails main window, or 0 when it does
 // not exist (yet).

@@ -132,7 +132,10 @@ func main() {
 	// hidden window is not created yet) and such an instance then wedges in
 	// WebView2 because both share the same user data folder. Detect the running
 	// instance ourselves first; Wails' SingleInstanceLock stays as a backstop.
-	if handleExistingInstance(dataDir, logging.NewSystemLogger(dataDir)) {
+	// Skip the single-instance probe in bindings-generation builds: the probe
+	// exits before wails.Run when another instance is running, which silently
+	// leaves frontend/wailsjs ungenerated.
+	if !bindingsGeneration && handleExistingInstance(dataDir, logging.NewSystemLogger(dataDir)) {
 		os.Exit(0)
 	}
 

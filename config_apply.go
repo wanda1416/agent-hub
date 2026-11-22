@@ -69,6 +69,13 @@ func (a *App) applyConfigLocked(cfg config.AppConfig, origin string) error {
 		UpdateTrayLanguage()
 	}
 
+	// Keep the reset monitor in sync with settings written by the GUI, the CLI
+	// or the tray. UpdateConfig only swaps values and wakes the loop, so it is
+	// safe to call while holding configMu.
+	if a.resetMonitor != nil && !monitorConfigEqual(old, cfg) {
+		a.resetMonitor.UpdateConfig(monitorConfigFrom(cfg))
+	}
+
 	if !configEqual(old, cfg) {
 		if origin == "" {
 			origin = originGUI
@@ -87,6 +94,66 @@ func normalizeConfig(cfg *config.AppConfig) {
 	if cfg.Locale != "en" {
 		cfg.Locale = "zh"
 	}
+	normalizeMonitorConfig(cfg)
+}
+
+// normalizeMonitorConfig fills in the reset-monitor defaults. Configurations
+// written before the monitor existed contain none of its fields; those are
+// migrated to "enabled with all models followed" instead of being silently
+// disabled by the zero values.
+func normalizeMonitorConfig(cfg *config.AppConfig) {
+	legacy := cfg.MonitorInterval == 0 && cfg.MonitorModels == nil && cfg.MonitorAlertMode == ""
+	if legacy {
+		cfg.MonitorEnabled = true
+		cfg.MonitorInterval = 10
+		cfg.MonitorModels = config.DefaultMonitorModels()
+		cfg.MonitorAlertMode = "notification"
+		cfg.MonitorAlertSound = true
+		return
+	}
+
+	if cfg.MonitorInterval < 5 || cfg.MonitorInterval > 120 {
+		cfg.MonitorInterval = 10
+	}
+	if cfg.MonitorModels == nil {
+		cfg.MonitorModels = config.DefaultMonitorModels()
+	} else {
+		valid := make(map[string]bool, len(config.DefaultMonitorModels()))
+		for _, id := range config.DefaultMonitorModels() {
+			valid[id] = true
+		}
+		models := make([]string, 0, len(cfg.MonitorModels))
+		seen := make(map[string]bool, len(cfg.MonitorModels))
+		for _, id := range cfg.MonitorModels {
+			if valid[id] && !seen[id] {
+				seen[id] = true
+				models = append(models, id)
+			}
+		}
+		cfg.MonitorModels = models
+	}
+	switch cfg.MonitorAlertMode {
+	case "inapp", "notification", "popup":
+	default:
+		cfg.MonitorAlertMode = "notification"
+	}
+}
+
+// monitorConfigEqual compares the reset-monitor settings only.
+func monitorConfigEqual(a, b config.AppConfig) bool {
+	if a.MonitorEnabled != b.MonitorEnabled ||
+		a.MonitorInterval != b.MonitorInterval ||
+		a.MonitorAlertMode != b.MonitorAlertMode ||
+		a.MonitorAlertSound != b.MonitorAlertSound ||
+		len(a.MonitorModels) != len(b.MonitorModels) {
+		return false
+	}
+	for i := range a.MonitorModels {
+		if a.MonitorModels[i] != b.MonitorModels[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // configEqual reports whether two configurations are identical. It is used to
@@ -100,7 +167,8 @@ func configEqual(a, b config.AppConfig) bool {
 		a.MaxLogLines != b.MaxLogLines ||
 		a.MaxLogFiles != b.MaxLogFiles ||
 		a.MaxRestart != b.MaxRestart ||
-		a.RestartPolicy != b.RestartPolicy {
+		a.RestartPolicy != b.RestartPolicy ||
+		!monitorConfigEqual(a, b) {
 		return false
 	}
 	if len(a.Processes) != len(b.Processes) {

@@ -10,6 +10,10 @@ func restoreMainWindowNative() {}
 // native window lookup is needed.
 func DescribeMainWindow() string { return "" }
 
+// FlashMainWindow is a no-op on non-Windows platforms, which have their own
+// ways of drawing attention to the app.
+func FlashMainWindow() {}
+
 // PostQuitToMainWindow is only needed on Windows, where the exit has to reach
 // the main window's message loop. Elsewhere Wails' own quit already ends the
 // event loop directly.

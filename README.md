@@ -26,9 +26,16 @@ Basic configuration, advanced restart policy, and environment variables live in 
 |:---------:|:--------:|
 | ![Process Logs](demo/image/process-logs.png) | ![Settings](demo/image/setting.png) |
 
+### Reset Monitor
+
+![Reset Monitor](demo/image/monitor.png)
+
+Follow any subset of the four products, tune the polling interval and alert mode, and jump to the AIHOT page for each announcement.
+
 ## Highlights
 
 - **Service hosting**: register local agent tools as long-running services and manage start, stop, restart, and status in one place
+- **Reset monitor**: watch AIHOT reset announcements for Codex, Antigravity, Claude and Grok Bot, and get notified when a reset is announced
 - **Restart without downtime**: closing AgentHub does not kill running children; the next launch re-adopts them by PID instead of spawning duplicates
 - **Centralized logs**: child stdout/stderr is written to durable log files and streamed into the UI in real time
 - **Failure recovery**: restart policies for always, on-failure, and never, with a configurable retry limit
@@ -44,6 +51,16 @@ Basic configuration, advanced restart policy, and environment variables live in 
 - **Restart Policies**: support for `always`, `on_failure`, and `never` restart policies
 - **Process Monitoring**: real-time status monitoring with PID, restart count, and error tracking
 - **Import/Export**: export process configurations as JSON; review a file before importing and choose whether same-name processes are skipped or overwritten
+
+### Reset Monitor
+- **Model selection**: follow any subset of Codex, Antigravity, Claude and Grok Bot
+- **Polling**: checks the AIHOT JSON API every 10 minutes by default (5–120 minutes configurable), with ETag caching
+- **Alert modes**: in-app badge, system notification, or a strong modal that stays on top until acknowledged or snoozed for 10 minutes
+- **No duplicates**: announcements are deduplicated per model and event, including across restarts
+- **Test alert**: verifies the notification, sound and modal path without waiting for a real announcement
+
+The monitor reads [AIHOT](https://aihot.news/resets). AIHOT data is free for personal,
+non-commercial use with attribution; commercial use requires authorization from AIHOT.
 
 ### Cross-Platform Support
 - **Windows** (amd64)
@@ -139,6 +156,8 @@ the foundation this work builds on.
 This fork adds rebranding, a repositioning as an agent toolbox, process adoption
 across restarts, durable log files, and new icon assets. The copyright and
 license notices of the upstream project and its dependencies remain in effect.
+See [NOTICE](NOTICE) for the statement of changes and [LICENSE](LICENSE) for the
+full license text.
 
 ## License
 

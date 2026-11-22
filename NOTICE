@@ -1,0 +1,16 @@
+AgentHub
+Copyright 2026 wanghui
+
+This product is a modified fork of ProcHub
+(https://github.com/modstart-lib/prochub), Copyright modstart-lib
+and the ProcHub contributors.
+
+Significant changes from the upstream project:
+- rebranded from ProcHub to AgentHub, with a new logo and application icons
+- repositioned the product as a local toolbox for agent-driven workflows
+- adopted surviving child processes by PID across application restarts
+- persisted child stdout/stderr to files and streamed them into the UI
+- removed upstream community and promotional content from the documentation
+
+The upstream copyright and license notices remain in effect. This product is
+licensed under the Apache License, Version 2.0; see the LICENSE file.

@@ -2,12 +2,15 @@
 import { ConfigProvider, theme } from 'ant-design-vue'
 import enUS from 'ant-design-vue/es/locale/en_US'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
-import { Cpu, Settings } from 'lucide-vue-next'
+import { Cpu, Radar, Settings } from 'lucide-vue-next'
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref } from 'vue'
 import AppLogo from './components/AppLogo.vue'
+import MonitorAlert from './components/MonitorAlert.vue'
 import UpdateDownloadModal from './components/UpdateDownloadModal.vue'
+import MonitorPage from './views/Monitor.vue'
 import ProcessList from './views/Process.vue'
 import SettingsPage from './views/Setting.vue'
+import type { MonitorAlertPayload, MonitorSnapshot } from './types/monitor'
 import { trackVisit } from './services/analytics'
 import { autoCheckVersion, isAppStoreBuild } from './services/version'
 import { useAppStore } from './stores/app'
@@ -18,7 +21,55 @@ import { EventsEmit, EventsOff, EventsOn } from '../wailsjs/runtime/runtime'
 const appStore = useAppStore()
 
 // Active tab state
-const activeTab = ref('processes')
+type Tab = 'processes' | 'monitor' | 'settings'
+const activeTab = ref<Tab>('processes')
+const monitorUnread = ref(false)
+
+// Strong alert state. Snoozing keeps the payload so the modal can reappear
+// after ten minutes without marking the announcement as acknowledged.
+const alertOpen = ref(false)
+const alertPayload = ref<MonitorAlertPayload | null>(null)
+let snoozeTimer: number | undefined
+let snoozedPayload: MonitorAlertPayload | null = null
+
+function switchTab(tab: Tab) {
+  activeTab.value = tab
+  if (tab === 'monitor') monitorUnread.value = false
+}
+
+function handleMonitorAlert(payload: MonitorAlertPayload) {
+  alertPayload.value = payload
+  alertOpen.value = true
+}
+
+function acknowledgeAlert() {
+  alertOpen.value = false
+  alertPayload.value = null
+  snoozedPayload = null
+  if (snoozeTimer) {
+    window.clearTimeout(snoozeTimer)
+    snoozeTimer = undefined
+  }
+}
+
+function snoozeAlert() {
+  snoozedPayload = alertPayload.value
+  alertOpen.value = false
+  alertPayload.value = null
+  if (snoozeTimer) window.clearTimeout(snoozeTimer)
+  snoozeTimer = window.setTimeout(() => {
+    if (snoozedPayload) {
+      alertPayload.value = snoozedPayload
+      alertOpen.value = true
+      snoozedPayload = null
+    }
+  }, 10 * 60 * 1000)
+}
+
+function viewMonitor() {
+  acknowledgeAlert()
+  switchTab('monitor')
+}
 
 // Track main page visit on mount
 onMounted(async () => {
@@ -65,8 +116,8 @@ onMounted(async () => {
   })
 
   registerNavigate(async (path: string) => {
-    if (path === 'processes' || path === 'settings') {
-      activeTab.value = path
+    if (path === 'processes' || path === 'monitor' || path === 'settings') {
+      switchTab(path)
     }
   })
 
@@ -75,8 +126,8 @@ onMounted(async () => {
   testActionSet('App.getActiveTab', () => activeTab.value)
   testActionSet('App.navigate', async (params: unknown) => {
     const { tab } = params as { tab: string }
-    if (tab === 'processes' || tab === 'settings') {
-      activeTab.value = tab
+    if (tab === 'processes' || tab === 'monitor' || tab === 'settings') {
+      switchTab(tab)
     }
     return activeTab.value
   })
@@ -122,12 +173,27 @@ onMounted(async () => {
   EventsOn('processes:changed', () => {
     appStore.loadProcesses()
   })
+  // 重置公告变化：不在监控页时点亮侧边栏红点
+  EventsOn('monitor:changed', (snapshot: MonitorSnapshot) => {
+    if (activeTab.value === 'monitor') return
+    const hasActive = (snapshot?.models || []).some(
+      (model) => model.followed && (model.events || []).some((event) => event.active)
+    )
+    if (hasActive) monitorUnread.value = true
+  })
+  EventsOn('monitor:alert', handleMonitorAlert)
+  // 点击系统通知后跳转到监控页
+  EventsOn('monitor:focus', () => switchTab('monitor'))
 })
 
 onUnmounted(() => {
   EventsOff('autotest:call')
   EventsOff('config:changed')
   EventsOff('processes:changed')
+  EventsOff('monitor:changed')
+  EventsOff('monitor:alert')
+  EventsOff('monitor:focus')
+  if (snoozeTimer) window.clearTimeout(snoozeTimer)
   testActionUnset([
     'App.getConfig',
   ])
@@ -164,17 +230,28 @@ const themeConfig = computed(() => ({
               :class="{ active: activeTab === 'processes' }"
               type="text"
               block
-              @click="activeTab = 'processes'"
+              @click="switchTab('processes')"
             >
               <Cpu class="w-5 h-5" aria-hidden="true" />
               <span class="tab-label">{{ appStore.t('processes.title') }}</span>
             </a-button>
             <a-button
               class="tab-button"
+              :class="{ active: activeTab === 'monitor' }"
+              type="text"
+              block
+              @click="switchTab('monitor')"
+            >
+              <Radar class="w-5 h-5" aria-hidden="true" />
+              <span class="tab-label">{{ appStore.t('monitor.title') }}</span>
+              <span v-if="monitorUnread" class="tab-dot" aria-hidden="true" />
+            </a-button>
+            <a-button
+              class="tab-button"
               :class="{ active: activeTab === 'settings' }"
               type="text"
               block
-              @click="activeTab = 'settings'"
+              @click="switchTab('settings')"
             >
               <Settings class="w-5 h-5" aria-hidden="true" />
               <span class="tab-label">{{ appStore.t('settings.title') }}</span>
@@ -189,6 +266,11 @@ const themeConfig = computed(() => ({
             <ProcessList />
           </div>
 
+          <!-- Monitor View -->
+          <div v-show="activeTab === 'monitor'" class="content-view">
+            <MonitorPage />
+          </div>
+
           <!-- Settings View -->
           <div v-show="activeTab === 'settings'" class="content-view">
             <SettingsPage />
@@ -197,7 +279,27 @@ const themeConfig = computed(() => ({
       </div>
     </div>
 
+    <!-- 强弹窗提醒 -->
+    <MonitorAlert
+      :open="alertOpen"
+      :payload="alertPayload"
+      @acknowledge="acknowledgeAlert"
+      @snooze="snoozeAlert"
+      @view="viewMonitor"
+    />
+
     <!-- 下载进度弹窗 / 后台下载指示 -->
     <UpdateDownloadModal />
   </ConfigProvider>
 </template>
+
+<style scoped>
+.tab-dot {
+  width: 6px;
+  height: 6px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+</style>

@@ -7,6 +7,10 @@ import { trackError } from '../services/analytics'
 
 export type ProcessStatus = 'running' | 'stopped' | 'errored' | 'starting'
 
+export type MonitorAlertMode = 'inapp' | 'notification' | 'popup'
+
+export const MONITOR_MODEL_IDS = ['codex', 'antigravity', 'claude', 'grok-bot'] as const
+
 export interface ProcessItem {
   id: string
   name: string
@@ -72,6 +76,13 @@ export const useAppStore = defineStore('app', () => {
   const processes = ref<ProcessItem[]>([])
   const logs = ref<string[]>([])
 
+  // Reset monitor settings mirrored from the backend configuration.
+  const monitorEnabled = ref(true)
+  const monitorInterval = ref(10)
+  const monitorModels = ref<string[]>([...MONITOR_MODEL_IDS])
+  const monitorAlertMode = ref<MonitorAlertMode>('notification')
+  const monitorAlertSound = ref(true)
+
   const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
 
   // applyLocale updates the in-memory locale without touching the backend.
@@ -117,11 +128,53 @@ export const useAppStore = defineStore('app', () => {
     locale?: string
     autoStart?: boolean
     autoStartWSL?: boolean
+    monitorEnabled?: boolean
+    monitorInterval?: number
+    monitorModels?: string[]
+    monitorAlertMode?: string
+    monitorAlertSound?: boolean
   }) => {
     if (config.theme) applyTheme(config.theme === 'dark' ? 'dark' : 'light')
     if (config.locale) applyLocale(config.locale === 'en' ? 'en' : 'zh')
     if (typeof config.autoStart === 'boolean') autoStart.value = config.autoStart
     if (typeof config.autoStartWSL === 'boolean') autoStartWSL.value = config.autoStartWSL
+    if (typeof config.monitorEnabled === 'boolean') monitorEnabled.value = config.monitorEnabled
+    if (typeof config.monitorInterval === 'number') monitorInterval.value = config.monitorInterval
+    if (Array.isArray(config.monitorModels)) monitorModels.value = [...config.monitorModels]
+    if (config.monitorAlertMode === 'inapp' || config.monitorAlertMode === 'notification' || config.monitorAlertMode === 'popup') {
+      monitorAlertMode.value = config.monitorAlertMode
+    }
+    if (typeof config.monitorAlertSound === 'boolean') monitorAlertSound.value = config.monitorAlertSound
+  }
+
+  // saveMonitorConfig persists a partial change and applies it locally right
+  // away so switches do not wait for the config:changed round trip.
+  const saveMonitorConfig = async (patch: Partial<{
+    enabled: boolean
+    interval: number
+    models: string[]
+    alertMode: MonitorAlertMode
+    alertSound: boolean
+  }>) => {
+    if (patch.enabled !== undefined) monitorEnabled.value = patch.enabled
+    if (patch.interval !== undefined) monitorInterval.value = patch.interval
+    if (patch.models !== undefined) monitorModels.value = [...patch.models]
+    if (patch.alertMode !== undefined) monitorAlertMode.value = patch.alertMode
+    if (patch.alertSound !== undefined) monitorAlertSound.value = patch.alertSound
+    try {
+      await AppAPI.SetMonitorConfig(
+        monitorEnabled.value,
+        monitorInterval.value,
+        [...monitorModels.value],
+        monitorAlertMode.value,
+        monitorAlertSound.value
+      )
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      trackError(`Failed to save monitor config: ${errorMsg}`)
+      console.error('Failed to save monitor config:', error)
+      throw error
+    }
   }
 
   // Load processes from backend
@@ -320,6 +373,11 @@ export const useAppStore = defineStore('app', () => {
         locale: (config.locale as string) || 'zh',
         autoStart: config.autoStart,
         autoStartWSL: config.autoStartWSL,
+        monitorEnabled: config.monitorEnabled,
+        monitorInterval: config.monitorInterval,
+        monitorModels: config.monitorModels,
+        monitorAlertMode: config.monitorAlertMode,
+        monitorAlertSound: config.monitorAlertSound,
       })
     } catch (error) {
       console.error('Failed to load settings:', error)
@@ -333,11 +391,17 @@ export const useAppStore = defineStore('app', () => {
     autoStartWSL,
     processes,
     logs,
+    monitorEnabled,
+    monitorInterval,
+    monitorModels,
+    monitorAlertMode,
+    monitorAlertSound,
     runningCount,
     stoppedCount,
     failedCount,
     setLocale,
     setTheme,
+    saveMonitorConfig,
     applyLocale,
     applyTheme,
     applyConfig,

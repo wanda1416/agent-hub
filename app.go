@@ -18,6 +18,7 @@ import (
 	"agenthub/internal/config"
 	"agenthub/internal/control"
 	"agenthub/internal/logging"
+	"agenthub/internal/monitor"
 	"agenthub/internal/platform"
 	"agenthub/internal/process"
 	"agenthub/internal/service"
@@ -47,6 +48,7 @@ type App struct {
 	systemLogger  *logging.RollingStore
 	wailsLogger   *logging.WailsLogger
 	updateMgr     *updater.Manager
+	resetMonitor  *monitor.Watcher
 	dataDir       string
 	// configMu serializes configuration writes. Reads and writes can originate
 	// from the GUI, the CLI control server and the tray at the same time, so
@@ -136,6 +138,8 @@ func (a *App) startup(ctx context.Context) {
 		a.systemLogger = logging.NewSystemLogger(a.dataDir)
 		a.LogSystemError("startup", fmt.Sprintf("Failed to load config, using default: %v", err))
 	}
+	// Migrate configurations written before the reset monitor existed.
+	normalizeConfig(&cfg)
 	a.config = cfg
 
 	// Initialize log directory
@@ -217,6 +221,9 @@ func (a *App) startup(ctx context.Context) {
 
 	// Start automation test HTTP server (no-op without autotest build tag)
 	startAutotestServer(ctx, a)
+
+	// Start the reset monitor after the context exists so it can notify.
+	a.startResetMonitor()
 }
 
 // Greet returns a greeting for the given name
@@ -1137,6 +1144,12 @@ func (a *App) CheckVersion() (VersionInfo, error) {
 func (a *App) shutdown(ctx context.Context) {
 	// Stop the CLI control server and remove its auth file
 	a.stopControlServer()
+
+	// Stop the reset monitor and release notification resources.
+	a.stopResetMonitor()
+	if a.ctx != nil {
+		runtime.CleanupNotifications(a.ctx)
+	}
 
 	// Log shutdown
 	a.LogSystemError("shutdown", "Application is shutting down")
