@@ -4,57 +4,64 @@
 
 AgentHub 是一个 Agent 主导的本地工具箱合集，使用 Wails、Go 和 Vue 3 + TypeScript 构建。它以常驻服务的形式托管本地的 Agent 工具，把启动、停止、日志、开机自启和运行状态集中在一个桌面窗口里管理。
 
-## 截图预览
-
-![进程管理主页](demo/image/home.png)
+## 界面预览
 
 ### 进程管理
 
-![进程列表](demo/image/home.png)
+![进程管理主页](demo/image/home.png)
 
-支持添加、删除、启动、停止、重启进程，可配置开机自启和重启策略，实时监控 PID、重启次数和错误信息。
+统一查看服务状态、PID 与重启次数，并可直接启动、停止、重启、查看日志或编辑配置。
 
-| 新增进程 | 编辑进程 | 进程日志 |
+### 新增进程
+
+支持基础配置、高级重启策略与环境变量三个标签页。
+
+| 基础配置 | 高级设置 | 环境变量 |
 |:--------:|:--------:|:--------:|
-| ![新增进程](demo/image/process-add.png) | ![编辑进程](demo/image/process-edit.png) | ![进程日志](demo/image/process-logs.png) |
+| ![新增进程](demo/image/process-add.png) | ![高级设置](demo/image/process-add-advanced.png) | ![环境变量](demo/image/process-add-env.png) |
 
-### 新增进程 - 高级设置与环境变量
+### 日志与设置
 
-支持配置开机自启、重启策略、最大重启次数，以及自定义环境变量。
+| 实时日志 | 设置页 |
+|:--------:|:------:|
+| ![进程日志](demo/image/process-logs.png) | ![设置页](demo/image/setting.png) |
 
-| 高级设置 | 环境变量 |
-|:--------:|:--------:|
-| ![高级设置](demo/image/process-add-advanced.png) | ![环境变量](demo/image/process-add-env.png) |
+## 核心能力
 
-### 设置页
-
-主题、语言、开机自启、版本更新与关于信息统一在设置页管理。
-
-![设置页](demo/image/setting.png)
+- **常驻服务托管**：把 Agent 工具注册为常驻服务，统一管理启动、停止、重启和运行状态
+- **退出不中断服务**：关闭 AgentHub 不会终止正在运行的子进程，再次启动时会按 PID 接管这些服务，不会重复拉起
+- **日志集中查看**：子进程的 stdout/stderr 写入持久化日志文件，界面实时跟随输出
+- **失败恢复**：支持始终重启、失败重启、从不重启三种策略，并可限制最大重试次数
+- **配置迁移**：进程配置可导出为 JSON，在另一台设备导入还原
+- **命令行控制**：同一可执行文件内置 CLI，可脚本化地启停服务、查看日志和修改设置
 
 ## 功能特性
 
 ### 进程管理
-- **添加/删除进程**：轻松添加新进程，支持自定义命令、参数和环境变量
+
+- **添加/删除进程**：自定义命令、参数、工作目录和环境变量
 - **启动/停止/重启**：完整的进程生命周期控制，支持优雅关闭
 - **自动启动**：配置进程在应用启动时自动运行
 - **重启策略**：支持 `always`（始终）、`on_failure`（失败时）和 `never`（从不）重启策略
 - **进程监控**：实时状态监控，包括 PID、重启次数和错误追踪
-- **导入/导出**：将进程配置导出为 JSON，在另一台设备导入还原；导入前可预览内容，同名进程可选择跳过或覆盖
+- **导入/导出**：导出全部进程配置为 JSON；导入前可预览内容，同名进程可选择跳过或覆盖
 
 ### 跨平台支持
+
 - **Windows** (amd64)
 - **macOS** (Intel 和 Apple Silicon)
 - **Linux** (amd64, arm64)
 
 ### 开机自启
+
 - **macOS**：使用 LaunchAgent
 - **Linux**：使用 XDG Autostart
 - **Windows**：使用注册表
 
 ### 日志功能
+
 - 滚动日志文件，支持可配置的保留策略
-- 实时日志流
+- 实时日志流，可搜索、筛选错误、下载
 - 分离的 stdout/stderr 捕获
 
 ## 命令行工具
@@ -117,13 +124,13 @@ wails build
 # 构建的应用程序将在 build/bin 目录中
 ```
 
-## 💬 交流沟通
+图标由 [scripts/gen-icons.py](scripts/gen-icons.py) 根据前端 SVG 的几何参数生成 PNG / ICO / ICNS 与托盘图标；修改 Logo 后运行 `python scripts/gen-icons.py` 即可同步全部资源。
 
-> 添加好友时备注 "AgentHub"
+## Fork 与致谢
 
-| 微信交流群 | QQ 交流群 |
-|:----------:|:---------:|
-| <img src="https://open.tecmz.com/code_dynamic/wx" width="200" alt="微信交流群" /> | <img src="https://open.tecmz.com/code_dynamic/qq" width="200" alt="QQ交流群" /> |
+本项目 fork 自 [modstart-lib/prochub](https://github.com/modstart-lib/prochub)（原 ProcHub），感谢原作者与上游项目的基础工作。
+
+本项目在上游基础上完成了品牌更名、Agent 工具箱定位调整、进程跨重启接管、日志持久化以及全新图标等改动。上游与相关依赖的开源作者版权与许可声明仍然有效。
 
 ## 许可证
 

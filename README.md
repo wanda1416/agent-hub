@@ -4,43 +4,46 @@
 
 AgentHub is a local toolbox for agent-driven workflows, built with Wails, Go, and Vue 3 + TypeScript. It hosts local agent tools as long-running services and brings start/stop, logs, auto-start, and status together in one desktop window.
 
-## Screenshot
-
-![Process Management Home](demo/image/home.png)
+## Screenshots
 
 ### Process Management
 
-![Process List](demo/image/home.png)
+![Process Management Home](demo/image/home.png)
 
-Add, remove, start, stop, and restart processes with auto-start and restart policies, plus real-time monitoring of PID, restart count, and errors.
+See service status, PID, and restart count, and start, stop, restart, inspect logs, or edit configuration in place.
 
-| Add Process | Edit Process | Process Logs |
-|:-----------:|:------------:|:------------:|
-| ![Add Process](demo/image/process-add.png) | ![Edit Process](demo/image/process-edit.png) | ![Process Logs](demo/image/process-logs.png) |
+### Add Process
 
-### Advanced Settings & Environment Variables
+Basic configuration, advanced restart policy, and environment variables live in three tabs.
 
-Configure auto-start, restart policy, max retries, and custom environment variables when adding a process.
+| Basic | Advanced | Environment |
+|:-----:|:--------:|:-----------:|
+| ![Add Process](demo/image/process-add.png) | ![Advanced Settings](demo/image/process-add-advanced.png) | ![Environment Variables](demo/image/process-add-env.png) |
 
-| Advanced Settings | Environment Variables |
-|:-----------------:|:---------------------:|
-| ![Advanced Settings](demo/image/process-add-advanced.png) | ![Environment Variables](demo/image/process-add-env.png) |
+### Logs and Settings
 
-### Settings Page
+| Live Logs | Settings |
+|:---------:|:--------:|
+| ![Process Logs](demo/image/process-logs.png) | ![Settings](demo/image/setting.png) |
 
-Theme, language, auto-start on boot, version update, and about are managed on the settings page.
+## Highlights
 
-![Settings Page](demo/image/setting.png)
+- **Service hosting**: register local agent tools as long-running services and manage start, stop, restart, and status in one place
+- **Restart without downtime**: closing AgentHub does not kill running children; the next launch re-adopts them by PID instead of spawning duplicates
+- **Centralized logs**: child stdout/stderr is written to durable log files and streamed into the UI in real time
+- **Failure recovery**: restart policies for always, on-failure, and never, with a configurable retry limit
+- **Portable configuration**: export all process definitions as JSON and import them on another machine
+- **CLI control**: the same executable ships a CLI for scripting start/stop, logs, and settings
 
 ## Features
 
 ### Process Management
-- **Add/Remove Processes**: Easily add new processes with customizable commands, arguments, and environment variables
-- **Start/Stop/Restart**: Full control over process lifecycle with graceful shutdown support
-- **Auto-start**: Configure processes to start automatically when the application launches
-- **Restart Policies**: Support for `always`, `on_failure`, and `never` restart policies
-- **Process Monitoring**: Real-time status monitoring with PID, restart count, and error tracking
-- **Import/Export**: Export process configurations as JSON and import them on another device; review the file first and choose whether same-name processes are skipped or overwritten
+- **Add/Remove Processes**: custom command, arguments, working directory, and environment variables
+- **Start/Stop/Restart**: full control over process lifecycle with graceful shutdown support
+- **Auto-start**: configure processes to start automatically when the application launches
+- **Restart Policies**: support for `always`, `on_failure`, and `never` restart policies
+- **Process Monitoring**: real-time status monitoring with PID, restart count, and error tracking
+- **Import/Export**: export process configurations as JSON; review a file before importing and choose whether same-name processes are skipped or overwritten
 
 ### Cross-Platform Support
 - **Windows** (amd64)
@@ -54,10 +57,10 @@ Theme, language, auto-start on boot, version update, and about are managed on th
 
 ### Logging
 - Rolling log files with configurable retention
-- Real-time log streaming
+- Real-time log streaming with search, error filtering, and download
 - Separate stdout/stderr capture
 
-### CLI
+## CLI
 
 AgentHub ships with a command line interface in the same executable. Running the
 binary without a known subcommand starts the GUI as usual; passing a subcommand
@@ -123,16 +126,20 @@ wails build
 # The built application will be in build/bin directory
 ```
 
+Icons are generated from the geometry of the frontend SVG by
+[scripts/gen-icons.py](scripts/gen-icons.py) (PNG / ICO / ICNS plus tray icons).
+Run `python scripts/gen-icons.py` after changing the logo to refresh every asset.
 
-## 💬 Join the Community
+## Fork & Acknowledgements
 
-> Add friend with note "AgentHub"
+This project is a fork of [modstart-lib/prochub](https://github.com/modstart-lib/prochub)
+(formerly ProcHub). Thanks to the original authors and the upstream project for
+the foundation this work builds on.
 
-| WeChat Group | QQ Group |
-|:------------:|:--------:|
-| <img src="https://open.tecmz.com/code_dynamic/wx" width="200" alt="WeChat Group" /> | <img src="https://open.tecmz.com/code_dynamic/qq" width="200" alt="QQ Group" /> |
+This fork adds rebranding, a repositioning as an agent toolbox, process adoption
+across restarts, durable log files, and new icon assets. The copyright and
+license notices of the upstream project and its dependencies remain in effect.
 
 ## License
 
 This project is licensed under the [Apache 2.0 License](LICENSE).
-
