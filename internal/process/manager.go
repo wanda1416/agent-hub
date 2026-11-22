@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -25,6 +26,8 @@ const (
 	retryPollInterval = 50 * time.Millisecond
 	// loopExitTimeout bounds how long Stop waits for a run loop to end.
 	loopExitTimeout = 5 * time.Second
+	// adoptPollInterval is how often an adopted process is checked for exit.
+	adoptPollInterval = 500 * time.Millisecond
 )
 
 var (
@@ -68,6 +71,22 @@ type Manager struct {
 	entries           map[string]*entry
 	logCallback       LogCallback
 	lifecycleCallback LifecycleCallback
+	// state persists the pid identity of every spawned child so a restarted
+	// AgentHub can re-adopt it. It is nil when persistence is disabled (tests).
+	state *stateStore
+	// probe abstracts the OS calls used to verify and stop adopted processes,
+	// so adoption can be tested without real child processes.
+	probe processProbe
+	// streamDir stores durable child stdout/stderr files. Children write to these
+	// files directly, so their output stays valid after AgentHub exits (an
+	// anonymous pipe would break and crash writers such as Node on EPIPE).
+	streamDir string
+}
+
+type processProbe struct {
+	identity  func(pid int) (ProcessIdentity, bool)
+	alive     func(pid int) bool
+	terminate func(pid int)
 }
 
 type entry struct {
@@ -87,12 +106,37 @@ type entry struct {
 	// because it also reflects non-running states (retry cooldown, errored)
 	// during which the loop is still alive and will spawn again.
 	loopActive bool
+	// adopted is true while the entry represents a child inherited from a
+	// previous AgentHub run. Such an entry has no exec.Cmd; it is watched by pid
+	// and stopped with terminateProcessID.
+	adopted bool
 }
 
 func NewManager() *Manager {
 	return &Manager{
 		entries: make(map[string]*entry),
+		probe: processProbe{
+			identity:  processIdentity,
+			alive:     isProcessRunning,
+			terminate: terminateProcessID,
+		},
 	}
+}
+
+// SetStateFile enables runtime-state persistence at path. It must be called
+// before Adopt so persisted children can be restored on startup.
+func (m *Manager) SetStateFile(path string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.state = newStateStore(path)
+}
+
+// SetStreamDir sets where child stdout/stderr files are kept. It must be called
+// before any process starts.
+func (m *Manager) SetStreamDir(path string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.streamDir = path
 }
 
 // SetLogCallback sets the callback function for process logs
@@ -217,28 +261,9 @@ func (m *Manager) Get(id string) (Snapshot, error) {
 	}, nil
 }
 
-// RunningNames returns the names of all processes that are currently running
-// or starting. It is used to block quitting while processes are still active.
-func (m *Manager) RunningNames() []string {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	names := make([]string, 0, len(m.entries))
-	for _, item := range m.entries {
-		if item.status == StatusRunning || item.status == StatusStarting {
-			name := item.definition.Name
-			if name == "" {
-				name = item.definition.ID
-			}
-			names = append(names, name)
-		}
-	}
-	return names
-}
-
-// ActiveNames returns the names of processes whose run loop is alive. Unlike
-// RunningNames it also covers entries in retry cooldown, which would spawn
-// again moments later, so update guards must use this.
+// ActiveNames returns the names of processes whose run loop is alive. It covers
+// entries in retry cooldown too, which would spawn again moments later, so
+// update guards must use this.
 func (m *Manager) ActiveNames() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -254,22 +279,6 @@ func (m *Manager) ActiveNames() []string {
 		}
 	}
 	return names
-}
-
-// StopAll stops all processes
-func (m *Manager) StopAll() {
-	m.mu.RLock()
-	ids := make([]string, 0, len(m.entries))
-	for id, item := range m.entries {
-		if item.loopActive {
-			ids = append(ids, id)
-		}
-	}
-	m.mu.RUnlock()
-
-	for _, id := range ids {
-		_ = m.Stop(id)
-	}
 }
 
 func (m *Manager) Start(ctx context.Context, id string) error {
@@ -311,6 +320,7 @@ func (m *Manager) Stop(id string) error {
 	item.manuallyStopped = true // Mark as manually stopped to prevent auto-restart
 	cmd := item.cmd
 	pid := item.pid
+	adopted := item.adopted
 	def := item.definition
 	m.mu.Unlock()
 
@@ -325,14 +335,27 @@ func (m *Manager) Stop(id string) error {
 	// pid > 0 means the child had already started, so cmd.Process is published
 	// and safe to read here. When it is still 0 the loop has not finished
 	// starting the child yet; the loop itself kills it (see run).
-	if cmd != nil && pid > 0 {
-		terminate(cmd)
+	if pid > 0 {
+		if cmd != nil {
+			terminate(cmd)
+		} else if adopted {
+			// The child was inherited from a previous AgentHub run, so there is
+			// no exec.Cmd left; stop it by pid instead.
+			m.probe.terminate(pid)
+		}
 	}
 
 	// Wait for the run loop to end. Without this a stop during the retry
 	// cooldown would be undone by the loop, and a following Start (as done by
 	// RestartProcess) could race with the loop it is replacing.
 	m.waitLoopExit(id)
+
+	// A stop always ends the persisted state for the entry. If the child could
+	// not actually be stopped, keep the record so the next start can adopt it
+	// rather than spawning a duplicate into the same port.
+	if m.state != nil && (pid <= 0 || m.probe.alive == nil || !m.probe.alive(pid)) {
+		_ = m.state.delete(id)
+	}
 	return nil
 }
 
@@ -396,8 +419,170 @@ func (m *Manager) finishLoop(id string) {
 		return
 	}
 	item.loopActive = false
+	item.adopted = false
 	item.cmd = nil
 	item.pid = 0
+	if m.state != nil {
+		_ = m.state.delete(id)
+	}
+}
+
+// Adopt restores children that survived a previous AgentHub run. A persisted
+// pid is only claimed when its creation time and executable path still match,
+// so a reused pid is never mistaken for a managed process. Adopted entries get
+// a watcher goroutine and are reported as running; Start on them is a no-op.
+func (m *Manager) Adopt(ctx context.Context) {
+	if m.state == nil {
+		return
+	}
+
+	for id, state := range m.state.snapshot() {
+		m.mu.Lock()
+		item, ok := m.entries[id]
+		if !ok || item.loopActive || state.PID <= 0 {
+			m.mu.Unlock()
+			_ = m.state.delete(id)
+			continue
+		}
+		if !m.verifyState(state) {
+			m.mu.Unlock()
+			_ = m.state.delete(id)
+			continue
+		}
+
+		item.pid = state.PID
+		item.adopted = true
+		item.loopActive = true
+		item.manuallyStopped = false
+		item.status = StatusRunning
+		command := state.Command
+		m.mu.Unlock()
+
+		m.emitLifecycle(LifecycleEvent{
+			Action:  ActionSpawn,
+			ID:      id,
+			PID:     state.PID,
+			Command: command,
+			Reason:  "adopt",
+		})
+
+		go m.watchAdopted(ctx, id, state)
+	}
+}
+
+// verifyState reports whether a persisted pid still belongs to the process it
+// was recorded for. When the probe cannot read the identity, the pid is not
+// claimed: spawning a duplicate is safer than stopping an unrelated process.
+func (m *Manager) verifyState(state RuntimeState) bool {
+	if state.PID <= 0 || m.probe.alive == nil || !m.probe.alive(state.PID) {
+		return false
+	}
+	if m.probe.identity == nil {
+		return false
+	}
+	current, ok := m.probe.identity(state.PID)
+	if !ok {
+		return false
+	}
+	if state.StartTime != 0 && current.StartTime != 0 && state.StartTime != current.StartTime {
+		return false
+	}
+	if state.ExePath != "" && current.ExePath != "" &&
+		!strings.EqualFold(filepath.Clean(state.ExePath), filepath.Clean(current.ExePath)) {
+		return false
+	}
+	return true
+}
+
+// watchAdopted polls an inherited child until it exits. It never spawns a
+// replacement: the restart policy of the previous run cannot be applied safely
+// without an exit code, and silently starting a second copy is the failure this
+// adoption is meant to prevent.
+func (m *Manager) watchAdopted(ctx context.Context, id string, state RuntimeState) {
+	logCb := m.logCallback
+	var tailStop chan struct{}
+	var tailWG sync.WaitGroup
+	if logCb != nil && m.streamDir != "" {
+		tailStop = make(chan struct{})
+		tailWG.Add(2)
+		for _, stream := range []string{"stdout", "stderr"} {
+			stream := stream
+			go func() {
+				defer tailWG.Done()
+				tailStream(id, stream, m.streamPathDir(id, stream), true, tailStop, logCb)
+			}()
+		}
+	}
+	defer func() {
+		if tailStop != nil {
+			close(tailStop)
+			tailWG.Wait()
+		}
+	}()
+
+	ticker := time.NewTicker(adoptPollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			// The app is closing: leave the child running and keep its state so
+			// the next start can adopt it again.
+			return
+		case <-ticker.C:
+		}
+
+		if m.verifyState(state) {
+			continue
+		}
+
+		m.mu.Lock()
+		item, ok := m.entries[id]
+		if !ok || !item.adopted || item.pid != state.PID {
+			m.mu.Unlock()
+			return
+		}
+		item.adopted = false
+		item.loopActive = false
+		item.pid = 0
+		item.status = StatusStopped
+		m.mu.Unlock()
+
+		if m.state != nil {
+			_ = m.state.delete(id)
+		}
+		m.emitLifecycle(LifecycleEvent{
+			Action:  ActionExit,
+			ID:      id,
+			PID:     state.PID,
+			Command: state.Command,
+			Reason:  "exited while adopted",
+		})
+		return
+	}
+}
+
+// saveRuntimeState records the identity of a freshly spawned child. Failures are
+// best effort: the process keeps running, it just cannot be adopted after a
+// restart.
+func (m *Manager) saveRuntimeState(id string, pid int, command string) {
+	if m.state == nil || pid <= 0 {
+		return
+	}
+
+	state := RuntimeState{
+		ID:        id,
+		PID:       pid,
+		Command:   command,
+		UpdatedAt: time.Now(),
+	}
+	if m.probe.identity != nil {
+		if identity, ok := m.probe.identity(pid); ok {
+			state.StartTime = identity.StartTime
+			state.ExePath = identity.ExePath
+		}
+	}
+	_ = m.state.put(state)
 }
 
 func (m *Manager) setStatus(id string, status Status) {
@@ -446,9 +631,18 @@ func (m *Manager) run(ctx context.Context, id string) {
 		// Set up platform-specific process group for proper child process handling
 		setupProcessGroup(cmd)
 
-		// Capture stdout and stderr
-		stdout, _ := cmd.StdoutPipe()
-		stderr, _ := cmd.StderrPipe()
+		// Point stdout/stderr at durable files when possible. A child that keeps a
+		// file handle is unaffected by AgentHub exiting; an anonymous pipe would be
+		// closed with the app and writers such as Node would die on EPIPE.
+		streams := m.openChildStreams(id)
+		var stdoutPipe, stderrPipe io.ReadCloser
+		if streams.ok {
+			cmd.Stdout = streams.stdoutFile
+			cmd.Stderr = streams.stderrFile
+		} else {
+			stdoutPipe, _ = cmd.StdoutPipe()
+			stderrPipe, _ = cmd.StderrPipe()
+		}
 
 		item.cmd = cmd
 		item.pid = 0
@@ -458,6 +652,7 @@ func (m *Manager) run(ctx context.Context, id string) {
 
 		err := cmd.Start()
 		if err != nil {
+			streams.close()
 			m.recordError(id, err)
 			m.emitLifecycle(LifecycleEvent{
 				Action: ActionSpawn, ID: id, Command: command, Reason: "failed: " + err.Error(),
@@ -493,17 +688,47 @@ func (m *Manager) run(ctx context.Context, id string) {
 			Action: ActionSpawn, ID: id, PID: childPID, Command: command, Reason: reason,
 		})
 
-		// Stream stdout
-		if stdout != nil && logCb != nil {
-			go m.streamOutput(id, "stdout", stdout, logCb)
+		// Persist the child identity so a restarted AgentHub can adopt it instead
+		// of spawning a duplicate.
+		if !stopped {
+			m.saveRuntimeState(id, childPID, command)
 		}
 
-		// Stream stderr
-		if stderr != nil && logCb != nil {
-			go m.streamOutput(id, "stderr", stderr, logCb)
+		var tailStop chan struct{}
+		var tailWG sync.WaitGroup
+		if logCb != nil {
+			if streams.ok {
+				// The child inherited its own handles, so the parent copies can be
+				// closed now; the tailers read the same files by path.
+				streams.close()
+				tailStop = make(chan struct{})
+				tailWG.Add(2)
+				go func() {
+					defer tailWG.Done()
+					tailStream(id, "stdout", streams.stdoutDir, false, tailStop, logCb)
+				}()
+				go func() {
+					defer tailWG.Done()
+					tailStream(id, "stderr", streams.stderrDir, false, tailStop, logCb)
+				}()
+			} else {
+				// Stream stdout/stderr from pipes when the files could not be opened.
+				if stdoutPipe != nil {
+					go m.streamOutput(id, "stdout", stdoutPipe, logCb)
+				}
+				if stderrPipe != nil {
+					go m.streamOutput(id, "stderr", stderrPipe, logCb)
+				}
+			}
+		} else {
+			streams.close()
 		}
 
 		err = cmd.Wait()
+		if tailStop != nil {
+			close(tailStop)
+			tailWG.Wait()
+		}
 		if err != nil {
 			m.recordError(id, err)
 		}

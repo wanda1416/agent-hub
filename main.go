@@ -197,7 +197,7 @@ func main() {
 			},
 			About: &mac.AboutInfo{
 				Title:   "AgentHub",
-				Message: "Process Manager",
+				Message: "Local Agent Toolbox",
 				Icon:    icon,
 			},
 		},

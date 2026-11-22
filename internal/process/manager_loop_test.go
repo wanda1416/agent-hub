@@ -232,9 +232,11 @@ func TestStopThenStartLeavesSingleChild(t *testing.T) {
 	if err := m.Stop("proc-1"); err != nil {
 		t.Fatalf("Stop: %v", err)
 	}
-	if platform.ProcessAlive(first) {
-		t.Fatalf("child %d is still alive after Stop", first)
-	}
+	// taskkill is asynchronous, so poll instead of checking the instant Stop
+	// returns.
+	waitFor(t, 2*time.Second, "the first child to exit", func() bool {
+		return !platform.ProcessAlive(first)
+	})
 
 	if err := m.Start(context.Background(), "proc-1"); err != nil {
 		t.Fatalf("Start after Stop: %v", err)

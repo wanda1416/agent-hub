@@ -10,13 +10,11 @@ import (
 
 // fakeTrayApp records the calls TrayManager makes into the main App.
 type fakeTrayApp struct {
-	mu           sync.Mutex
-	locale       string
-	ctx          context.Context
-	running      []string
-	prepared     bool
-	blockedNames []string
-	logs         []string
+	mu       sync.Mutex
+	locale   string
+	ctx      context.Context
+	prepared bool
+	logs     []string
 }
 
 func (f *fakeTrayApp) GetLocale() string       { return f.locale }
@@ -26,22 +24,10 @@ func (f *fakeTrayApp) DescribeProcesses() string {
 	return "processes: web(id-1) status=stopped pid=0 restarts=0"
 }
 
-func (f *fakeTrayApp) RunningProcessNames() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.running
-}
-
 func (f *fakeTrayApp) PrepareQuit() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.prepared = true
-}
-
-func (f *fakeTrayApp) NotifyQuitBlocked(names []string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.blockedNames = names
 }
 
 func (f *fakeTrayApp) LogSystemError(component, message string) {
@@ -88,41 +74,20 @@ func (f *fakeTrayApp) logIndex(substr string) int {
 	return -1
 }
 
-// blockedApp keeps the process-state query blocked, like a wedged manager.
-type blockedApp struct {
-	fakeTrayApp
-	release chan struct{}
-}
-
-func (b *blockedApp) RunningProcessNames() []string {
-	<-b.release
-	return nil
-}
-
-// TestQuitAppBlockedWhileRunning pins the guard: a quit requested from the tray
-// while a process is still running must not mark the app as quitting (which
-// would let the window close handler exit), and it must warn the frontend.
-func TestQuitAppBlockedWhileRunning(t *testing.T) {
-	app := &fakeTrayApp{running: []string{"web", "worker"}}
-	tray := NewTrayManager(app, nil, nil)
-
-	tray.quitApp()
-
-	if app.prepared {
-		t.Error("quitApp called PrepareQuit while processes were still running")
-	}
-	if len(app.blockedNames) != 2 {
-		t.Fatalf("NotifyQuitBlocked names = %v, want the two running processes", app.blockedNames)
-	}
-	if !app.waitForLog("Quit blocked") {
-		t.Error("want a blocked-quit line in the tray log")
-	}
+// stubSystrayQuit replaces the tray shutdown with a no-op: the test never starts
+// the real systray loop, and Quit panics without it.
+func stubSystrayQuit(t *testing.T) {
+	t.Helper()
+	original := systrayQuit
+	systrayQuit = func() {}
+	t.Cleanup(func() { systrayQuit = original })
 }
 
 // TestQuitAppLogsRequest pins the diagnostic line written on every tray quit,
 // which is what identified the quit path in user reports.
 func TestQuitAppLogsRequest(t *testing.T) {
-	app := &fakeTrayApp{running: []string{"web"}}
+	stubSystrayQuit(t)
+	app := &fakeTrayApp{}
 	tray := NewTrayManager(app, nil, nil)
 
 	tray.quitApp()
@@ -130,56 +95,30 @@ func TestQuitAppLogsRequest(t *testing.T) {
 	if !app.waitForLog("Quit requested from tray menu") {
 		t.Error("want a quit-request line in the tray log")
 	}
-}
-
-// TestRunningNamesTimesOut pins that a wedged process manager cannot hold the
-// quit path: the query reports failure instead of blocking forever.
-func TestRunningNamesTimesOut(t *testing.T) {
-	app := &blockedApp{release: make(chan struct{})}
-	defer close(app.release)
-	tray := NewTrayManager(app, nil, nil)
-
-	start := time.Now()
-	names, ok := tray.runningNames(20 * time.Millisecond)
-
-	if ok {
-		t.Fatalf("runningNames returned ok with %v, want a timeout", names)
-	}
-	if elapsed := time.Since(start); elapsed > time.Second {
-		t.Errorf("runningNames took %s, want it to give up after the timeout", elapsed)
-	}
-}
-
-func TestRunningNames(t *testing.T) {
-	app := &fakeTrayApp{running: []string{"web"}}
-	tray := NewTrayManager(app, nil, nil)
-
-	names, ok := tray.runningNames(time.Second)
-
-	if !ok || len(names) != 1 || names[0] != "web" {
-		t.Fatalf("runningNames() = %v, %v; want [web], true", names, ok)
+	if !app.prepared {
+		t.Error("quitApp did not mark the app as quitting")
 	}
 }
 
 // TestQuitLogOrder pins that the quit diagnostics land in the order the steps
 // ran, so a user's log file reads as a timeline instead of a shuffled set.
 func TestQuitLogOrder(t *testing.T) {
-	app := &fakeTrayApp{running: []string{"web"}}
+	stubSystrayQuit(t)
+	app := &fakeTrayApp{}
 	tray := NewTrayManager(app, nil, nil)
 
 	tray.quitApp()
 
-	if !app.waitForLog("Quit blocked") {
-		t.Fatal("want a blocked-quit line in the tray log")
+	if !app.waitForLog("Quit requested") {
+		t.Fatal("want a quit-request line in the tray log")
 	}
 	request := app.logIndex("Quit requested")
-	query := app.logIndex("state query returned")
-	blocked := app.logIndex("Quit blocked")
-	if request < 0 || query < 0 || blocked < 0 {
-		t.Fatalf("missing quit lines: request=%d query=%d blocked=%d", request, query, blocked)
+	prepare := app.logIndex("app marked as quitting")
+	if request < 0 || prepare < 0 {
+		t.Fatalf("missing quit lines: request=%d prepare=%d", request, prepare)
 	}
-	if request > query || query > blocked {
-		t.Errorf("quit log order = request %d, query %d, blocked %d; want ascending", request, query, blocked)
+	if request > prepare {
+		t.Errorf("quit log order = request %d, prepare %d; want ascending", request, prepare)
 	}
 }
 

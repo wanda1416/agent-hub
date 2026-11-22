@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgentHub Logo 候选方案</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --primary: #10b981;
+    --primary-dark: #059669;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 28px 80px; }
+  header { margin-bottom: 40px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--primary-dark);
+    background: rgba(16,185,129,.1); padding: 6px 12px; border-radius: 999px;
+  }
+  h1 { font-size: 34px; line-height: 1.2; margin: 16px 0 10px; letter-spacing: -.02em; }
+  .lead { margin: 0; color: var(--muted); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  h2 { font-size: 20px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 22px; }
+  .section-head p { margin: 0; color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    overflow: hidden; display: flex; flex-direction: column;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -18px rgba(15,23,42,.28); }
+  .thumb { background: #eef1f5; position: relative; }
+  .thumb img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+  .badge {
+    position: absolute; top: 12px; left: 12px;
+    font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
+    background: rgba(15,23,42,.72); color: #fff; backdrop-filter: blur(6px);
+  }
+  .badge.rec { background: var(--primary); color: #04301f; }
+  .body { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 11px; flex: 1; }
+  .title-row { display: flex; align-items: center; gap: 10px; }
+  .title-row h3 { font-size: 16px; margin: 0; }
+  .sizes { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .size-box {
+    background: #f1f5f9; border-radius: 8px; display: grid; place-items: center;
+    overflow: hidden; border: 1px solid var(--line);
+  }
+  .size-box img { display: block; object-fit: cover; }
+  .s32 img { width: 24px; height: 24px; }
+  .s16 img { width: 14px; height: 14px; }
+  .s16 { padding: 3px; }
+  .desc { font-size: 13px; color: var(--muted); line-height: 1.65; margin: 0; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+  .tag { font-size: 11px; padding: 4px 9px; border-radius: 999px; background: #f1f5f9; color: #475569; }
+  .tag.good { background: rgba(16,185,129,.12); color: var(--primary-dark); }
+  .tag.warn { background: rgba(245,158,11,.14); color: #b45309; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 52px; }
+  @media (max-width: 820px) { .split { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+  .panel h3 { font-size: 15px; margin: 0 0 14px; }
+  .opt {
+    display: flex; gap: 12px; padding: 11px 0; border-top: 1px dashed var(--line);
+    font-size: 14px; line-height: 1.5;
+  }
+  .opt:first-of-type { border-top: none; }
+  .opt .k {
+    flex: none; width: 22px; height: 22px; border-radius: 6px; background: #f1f5f9;
+    color: #475569; font-size: 12px; font-weight: 600; display: grid; place-items: center;
+  }
+  .opt .txt { color: #334155; }
+  .opt .note { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .pick {
+    margin-top: 40px; background: linear-gradient(140deg, #0f172a, #1e293b);
+    color: #e2e8f0; border-radius: 20px; padding: 26px 28px;
+  }
+  .pick h2 { color: #fff; }
+  .pick p { margin: 8px 0 0; color: #94a3b8; font-size: 14px; line-height: 1.7; }
+  .pick code { background: rgba(255,255,255,.1); padding: 2px 7px; border-radius: 6px; font-size: 13px; }
+  footer { margin-top: 28px; color: #94a3b8; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">AgentHub · Brand</span>
+    <h1>小机器人 Logo 候选方案</h1>
+    <p class="lead">
+      定位已从「进程管理器」调整为「Agent 主导的小型工具箱合集」。以下 6 个方向都围绕「小机器人 + 工具」展开，
+      每张卡片右侧是 24px / 14px 的小尺寸预览，可直接判断托盘与 favicon 下的识别度。
+    </p>
+  </header>
+
+  <div class="section-head">
+    <h2>六个方向</h2>
+    <p>建议先看小尺寸预览，再决定大图。</p>
+  </div>
+
+  <div class="grid">
+    <article class="card">
+      <div class="thumb">
+        <img src="option-1.jpg" alt="Option 1" />
+        <span class="badge rec">推荐 · 主图标</span>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>01 · 极简机器人头</h3>
+          <div class="sizes">
+            <div class="size-box s32"><img src="option-1.jpg" alt="" /></div>
+            <div class="size-box s16"><img src="option-1.jpg" alt="" /></div>
+          </div>
+        </div>
+        <p class="desc">深蓝灰圆角头 + 薄荷绿大圆眼 + 天线绿点。几何简单、留白充足，最像「一个 agent 本体」。</p>
+        <div class="tags">
+          <span class="tag good">小尺寸最稳</span>
+          <span class="tag good">亲近感强</span>
+          <span class="tag">工具箱语义弱</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="thumb">
+        <img src="option-2.jpg" alt="Option 2" />
+        <span class="badge">科技感</span>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>02 · 节点机器人脸</h3>
+          <div class="sizes">
+            <div class="size-box s32"><img src="option-2.jpg" alt="" /></div>
+            <div class="size-box s16"><img src="option-2.jpg" alt="" /></div>
+          </div>
+        </div>
+        <p class="desc">深海军蓝圆角底，方块节点与电路连线拼成机器人脸，薄荷绿方眼发光，强调 Hub / 连接。</p>
+        <div class="tags">
+          <span class="tag good">科技感强</span>
+          <span class="tag warn">32px 偏碎</span>
+          <span class="tag warn">细节多</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="thumb">
+        <img src="option-3.jpg" alt="Option 3" />
+        <span class="badge rec">推荐 · 最贴定位</span>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>03 · 工具箱机器人</h3>
+          <div class="sizes">
+            <div class="size-box s32"><img src="option-3.jpg" alt="" /></div>
+            <div class="size-box s16"><img src="option-3.jpg" alt="" /></div>
+          </div>
+        </div>
+        <p class="desc">机器人头直接长在工具箱上，提手兼作天线，橙色眼睛与微笑。语义最完整：会使用工具的 agent。</p>
+        <div class="tags">
+          <span class="tag good">「工具箱」语义最强</span>
+          <span class="tag good">有记忆点</span>
+          <span class="tag warn">主色偏离 emerald</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="thumb">
+        <img src="option-4.jpg" alt="Option 4" />
+        <span class="badge rec">推荐 · 开发者气质</span>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>04 · 终端机器人</h3>
+          <div class="sizes">
+            <div class="size-box s32"><img src="option-4.jpg" alt="" /></div>
+            <div class="size-box s16"><img src="option-4.jpg" alt="" /></div>
+          </div>
+        </div>
+        <p class="desc">深色圆角屏幕脸，<code>&gt;_</code> 终端眼 + 薄荷绿描边发光。最简洁，开发者工具气质最强。</p>
+        <div class="tags">
+          <span class="tag good">极简好缩放</span>
+          <span class="tag good">开发者认同</span>
+          <span class="tag">机器人感偏弱</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="thumb">
+        <img src="option-5.jpg" alt="Option 5" />
+        <span class="badge">吉祥物</span>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>05 · 抱工具箱的小机器人</h3>
+          <div class="sizes">
+            <div class="size-box s32"><img src="option-5.jpg" alt="" /></div>
+            <div class="size-box s16"><img src="option-5.jpg" alt="" /></div>
+          </div>
+        </div>
+        <p class="desc">全身小机器人抱着绿色工具箱，蓝灰 + 薄荷绿描边卡通风。适合做官网吉祥物、空状态插画。</p>
+        <div class="tags">
+          <span class="tag good">延展性最好</span>
+          <span class="tag warn">不适合主图标</span>
+          <span class="tag warn">小尺寸丢失细节</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="thumb">
+        <img src="option-6.jpg" alt="Option 6" />
+        <span class="badge">单色版</span>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>06 · 单色线稿机器人</h3>
+          <div class="sizes">
+            <div class="size-box s32"><img src="option-6.jpg" alt="" /></div>
+            <div class="size-box s16"><img src="option-6.jpg" alt="" /></div>
+          </div>
+        </div>
+        <p class="desc">纯绿线稿：圆角方框 + 两点眼睛 + 天线，白底。天然适合托盘 / favicon，也可以做深色主题变体。</p>
+        <div class="tags">
+          <span class="tag good">托盘/favicon 最佳</span>
+          <span class="tag good">单色易适配</span>
+          <span class="tag">做主图标偏单薄</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="split">
+    <section class="panel">
+      <h3>描述文案 · 中文</h3>
+      <div class="opt"><span class="k">A</span><span class="txt">AgentHub - 本地 Agent 工具箱<span class="note">最贴新定位，短、可扩展；推荐用于「关于」</span></span></div>
+      <div class="opt"><span class="k">B</span><span class="txt">AgentHub - Agent 工具箱与本地服务管家<span class="note">保留了托管常驻服务的实际能力</span></span></div>
+      <div class="opt"><span class="k">C</span><span class="txt">AgentHub - 让 Agent 工具常驻运行<span class="note">偏价值主张，适合 README 首句</span></span></div>
+      <div class="opt"><span class="k">D</span><span class="txt">AgentHub - 一站式 Agent 工具集<span class="note">强调「合集」</span></span></div>
+    </section>
+
+    <section class="panel">
+      <h3>描述文案 · 英文 / 托盘</h3>
+      <div class="opt"><span class="k">A</span><span class="txt">AgentHub - Local agent toolbox<span class="note">对应中文 A，推荐 aboutDesc</span></span></div>
+      <div class="opt"><span class="k">B</span><span class="txt">AgentHub - Agent toolbox &amp; service supervisor<span class="note">对应中文 B</span></span></div>
+      <div class="opt"><span class="k">C</span><span class="txt">AgentHub - A toolbox for AI agents<span class="note">更口语，适合官网</span></span></div>
+      <div class="opt"><span class="k">T</span><span class="txt">托盘 tooltip：AgentHub - Agent Toolbox<span class="note">仅 24 字符，悬浮提示不会截断</span></span></div>
+    </section>
+  </div>
+
+  <section class="pick">
+    <h2>建议组合</h2>
+    <p>
+      主图标用 <code>01 极简机器人头</code> 或 <code>03 工具箱机器人</code>，按选定方向重绘为几何 SVG（保证 1024px 与 16px 都清晰）；
+      托盘 / favicon 用 <code>06 单色线稿</code> 的简化版；<code>05</code> 留作官网吉祥物。<br />
+      文案推荐：关于页用 <code>本地 Agent 工具箱</code>，托盘 tooltip 用 <code>Agent Toolbox</code>。
+    </p>
+  </section>
+
+  <footer>候选图为概念草图，最终会以矢量 SVG 重绘后导出 PNG / ICO / ICNS。</footer>
+</div>
+</body>
+</html>

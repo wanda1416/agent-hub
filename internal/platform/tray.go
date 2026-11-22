@@ -20,9 +20,9 @@ import (
 // the app running with no way to close it.
 const quitFallbackTimeout = 2 * time.Second
 
-// quitStateTimeout bounds the process-state query done when the tray quit is
-// clicked. It is normally answered in microseconds.
-const quitStateTimeout = time.Second
+// systrayQuit is a seam for tests: ending the tray without a running systray
+// loop panics, so tests replace it with a no-op.
+var systrayQuit = systray.Quit
 
 // AppRef defines the interface TrayManager needs from the main App.
 // This avoids a circular import between internal/platform and package main.
@@ -32,12 +32,6 @@ type AppRef interface {
 	// PrepareQuit marks the app as quitting so the window close handler
 	// allows the app to exit instead of only hiding the window.
 	PrepareQuit()
-	// RunningProcessNames returns the names of processes that are still
-	// running. Quitting is blocked while this list is not empty.
-	RunningProcessNames() []string
-	// NotifyQuitBlocked informs the frontend that the quit was blocked
-	// because some processes are still running.
-	NotifyQuitBlocked(names []string)
 	// DescribeProcesses renders the current process state (status, pid,
 	// restarts) for the diagnostic line written around a quit.
 	DescribeProcesses() string
@@ -165,7 +159,7 @@ func (t *TrayManager) onReady() {
 	} else {
 		systray.SetIcon(t.trayIcon)
 	}
-	systray.SetTooltip("AgentHub - Process Manager")
+	systray.SetTooltip("AgentHub - Agent Toolbox")
 
 	// On Windows a left click on the tray icon shows the main window while a
 	// right click shows the context menu (the systray default). On other
@@ -253,53 +247,25 @@ func (t *TrayManager) showWindow() {
 	t.logSystem("Show window: restored in %s", time.Since(start).Round(time.Millisecond))
 }
 
-// quitApp quits the application, but only when every managed process has been
-// stopped. If any process is still running the quit is blocked: the window is
-// shown and the frontend displays a warning telling the user to stop the
-// processes first. This prevents silently killing or leaking running jobs.
+// quitApp quits the application. Managed processes keep running and are adopted
+// again on the next start, so the quit is never blocked by them.
 func (t *TrayManager) quitApp() {
 	t.logSystem("Quit requested from tray menu")
 
 	if t.app == nil {
 		t.logSystem("Quit: tray has no app reference, stopping the tray only")
-		systray.Quit()
+		systrayQuit()
 		return
 	}
 
 	// The fallback is armed before anything else can block, so every step below
-	// (state query, native window restore, the Wails quit hand-off) is covered.
-	// A quit that is refused because processes are running stops the guard
-	// instead, so the fallback only ever fires for a quit the user could expect
-	// to succeed.
+	// (state snapshot, native window restore, the Wails quit hand-off) is covered.
 	guard := time.AfterFunc(quitFallbackTimeout, func() {
 		t.exitWithLog("Quit stalled for %s, forcing process exit (last step: %s)", quitFallbackTimeout, t.quitStage())
 	})
-	t.setQuitStage("state query")
-	// The full snapshot goes out on its own goroutine: it is diagnostic only and
-	// must not delay (or be able to delay) the quit.
+	t.setQuitStage("state snapshot")
+	// The snapshot is diagnostic only and must not delay the quit.
 	go t.logProcessSnapshot()
-
-	queryStart := time.Now()
-	names, ok := t.runningNames(quitStateTimeout)
-	if !ok {
-		// The process state could not be read in time. The user asked to quit and
-		// the manager is wedged, so leaving the app unclosable is worse than
-		// skipping the running-process guard.
-		t.exitWithLog("Quit forced: process state unavailable within %s", quitStateTimeout)
-	}
-	t.logSystem("Quit: state query returned %d running process(es) %v in %s",
-		len(names), names, time.Since(queryStart).Round(time.Millisecond))
-
-	// Block quitting while processes are still running.
-	if len(names) > 0 {
-		guard.Stop()
-		t.logSystem("Quit blocked, %d process(es) still running: %v", len(names), names)
-		// Bring the window back so the user can see the warning.
-		go t.showWindow()
-		t.app.NotifyQuitBlocked(names)
-		t.logSystem("Quit blocked: quit-blocked event emitted to the frontend")
-		return
-	}
 
 	// Allow the window close handler to proceed (instead of only hiding).
 	t.setQuitStage("prepare quit")
@@ -325,7 +291,7 @@ func (t *TrayManager) quitApp() {
 	}
 	t.logSystem("Quit: no Wails context, stopping the tray only")
 	guard.Stop()
-	systray.Quit()
+	systrayQuit()
 }
 
 // postedVerb turns the PostQuitToMainWindow result into the word used in the log.
@@ -351,29 +317,14 @@ func (t *TrayManager) quitStage() string {
 	return t.quitStageName
 }
 
-// logProcessSnapshot records every process entry with its status and pid, so a
-// report shows why a quit was blocked (or why the app believed nothing ran).
+// logProcessSnapshot records every process entry with its status and pid for
+// post-quit diagnostics.
 func (t *TrayManager) logProcessSnapshot() {
 	detail := t.app.DescribeProcesses()
 	if detail == "" {
 		return
 	}
 	t.logSystem("Quit: %s", detail)
-}
-
-// runningNames returns the names of the running processes within timeout. ok is
-// false when the query did not answer in time, which happens when the process
-// manager is wedged on its own lock.
-func (t *TrayManager) runningNames(timeout time.Duration) (names []string, ok bool) {
-	done := make(chan []string, 1)
-	go func() { done <- t.app.RunningProcessNames() }()
-
-	select {
-	case names = <-done:
-		return names, true
-	case <-time.After(timeout):
-		return nil, false
-	}
 }
 
 // exitWithLog records why the process is being forced to end and then ends it.

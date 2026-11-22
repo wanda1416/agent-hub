@@ -3,10 +3,12 @@
 package process
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"strconv"
 	"syscall"
+	"time"
 )
 
 // Windows creation flags
@@ -65,24 +67,62 @@ func gracefulStop(cmd *exec.Cmd, done chan struct{}) error {
 	return nil
 }
 
-// isProcessRunning checks if a process is still running on Windows
+// terminateProcessID stops an adopted process. It has no exec.Cmd handle - the
+// AgentHub that spawned it is gone - so the pid is the only handle left.
+func terminateProcessID(pid int) {
+	if pid <= 0 {
+		return
+	}
+
+	// Best effort graceful stop, mirroring gracefulStop for a live child.
+	dll, err := syscall.LoadDLL("kernel32.dll")
+	if err == nil {
+		if proc, err := dll.FindProc("GenerateConsoleCtrlEvent"); err == nil {
+			_, _, _ = proc.Call(1, uintptr(pid))
+		}
+	}
+
+	deadline := time.Now().Add(GracefulStopTimeout)
+	for time.Now().Before(deadline) {
+		if !isProcessRunning(pid) {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	kill := exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(pid))
+	kill.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	if err := kill.Run(); err != nil {
+		if process, findErr := os.FindProcess(pid); findErr == nil {
+			_ = process.Kill()
+		}
+	}
+}
+
+// isProcessRunning checks if a process is still running on Windows.
+//
+// It must not call os.FindProcess: on Windows that opens a process handle and
+// discards it without closing, so polling (adoption, graceful stop) leaked a
+// handle per check and kept killed processes openable as zombies.
 func isProcessRunning(pid int) bool {
-	_, err := os.FindProcess(pid)
-	if err != nil {
+	if pid <= 0 {
 		return false
 	}
-	// On Windows, FindProcess always succeeds for valid PIDs
-	// We need to open the process to check if it exists
-	handle, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, uint32(pid))
+
+	// PROCESS_QUERY_LIMITED_INFORMATION works for more processes than the full
+	// query right, including ones running at another integrity level.
+	const processQueryLimitedInformation = 0x1000
+	handle, err := syscall.OpenProcess(processQueryLimitedInformation, false, uint32(pid))
 	if err != nil {
-		return false
+		// An access denial means the process exists but cannot be queried.
+		return errors.Is(err, syscall.ERROR_ACCESS_DENIED)
 	}
 	defer syscall.CloseHandle(handle)
 
 	var exitCode uint32
 	err = syscall.GetExitCodeProcess(handle, &exitCode)
 	if err != nil {
-		return false
+		return errors.Is(err, syscall.ERROR_ACCESS_DENIED)
 	}
 	// STILL_ACTIVE (259) means the process is still running
 	return exitCode == 259

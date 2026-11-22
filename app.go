@@ -77,6 +77,14 @@ func NewApp() *App {
 		wslMgr:       service.NewWSLManager(),
 		wailsLogger:  logging.NewWailsLogger(),
 	}
+	// Runtime state lets a restarted AgentHub adopt the children that are still
+	// running instead of spawning a second copy on the same port.
+	app.pm.SetStateFile(filepath.Join(dataDir, "runtime-state.json"))
+
+	// Children write stdout/stderr to these files rather than pipes, so their
+	// output handle stays valid after AgentHub exits and the next run can tail it.
+	app.pm.SetStreamDir(filepath.Join(dataDir, "streams"))
+
 	app.updateMgr = updater.New(updater.Options{
 		Endpoint:       updateEndpoint(),
 		CurrentVersion: appConfig.Version,
@@ -172,8 +180,6 @@ func (a *App) startup(ctx context.Context) {
 			"id=%s pid=%d reason=%s command=%s", ev.ID, ev.PID, ev.Reason, ev.Command))
 	})
 
-	
-
 	// Register saved processes
 	for _, def := range a.config.Processes {
 		a.pm.Register(def)
@@ -184,8 +190,15 @@ func (a *App) startup(ctx context.Context) {
 			store: logging.NewRollingStore(processLogDir, a.config.MaxLogLines, a.config.MaxLogFiles),
 			hub:   logging.NewStreamHub(100),
 		}
+	}
 
-		// Auto-start processes if configured
+	// Adopt children that survived the previous AgentHub run before any auto-start
+	// runs: an adopted entry is already "started", so Start below is a no-op for
+	// it and no duplicate is spawned on the same port.
+	a.pm.Adopt(ctx)
+
+	// Auto-start processes if configured
+	for _, def := range a.config.Processes {
 		if def.AutoStart {
 			go a.pm.Start(ctx, def.ID)
 		}
@@ -957,29 +970,18 @@ func (a *App) PrepareQuit() {
 	SetQuitting(true)
 }
 
-// RunningProcessNames returns the names of processes that are still running or
-// starting. Implements platform.AppRef.
-func (a *App) RunningProcessNames() []string {
-	defer a.recoverPanic("RunningProcessNames")
-	return a.pm.RunningNames()
-}
-
-// NotifyQuitBlocked tells the frontend that quitting was blocked because some
-// processes are still running. Implements platform.AppRef.
-func (a *App) NotifyQuitBlocked(names []string) {
-	defer a.recoverPanic("NotifyQuitBlocked")
-	if a.ctx == nil {
-		return
-	}
-	runtime.EventsEmit(a.ctx, "app:quitBlocked", map[string]interface{}{
-		"count": len(names),
-		"names": names,
-	})
+// QuitApp quits the application. Managed processes keep running and are adopted
+// again on the next start, so quitting never requires stopping them first.
+func (a *App) QuitApp() {
+	defer a.recoverPanic("QuitApp")
+	a.logLifecycle("quit requested from the frontend")
+	SetQuitting(true)
+	runtime.Quit(a.ctx)
 }
 
 // DescribeProcesses renders every process entry with its status and pid. It is
-// logged around a tray quit so a report shows why the quit was blocked (or why
-// the app believed nothing was running). Implements platform.AppRef.
+// logged around a tray quit so a report shows the state at quit time.
+// Implements platform.AppRef.
 func (a *App) DescribeProcesses() string {
 	defer a.recoverPanic("DescribeProcesses")
 
@@ -1002,21 +1004,6 @@ func (a *App) DescribeProcesses() string {
 		parts = append(parts, part)
 	}
 	return "processes: " + strings.Join(parts, "; ")
-}
-
-// QuitApp quits the application. Quitting is blocked while any process is still
-// running: the window is shown and the frontend displays a warning instead.
-func (a *App) QuitApp() {
-	defer a.recoverPanic("QuitApp")
-	a.logLifecycle("quit requested from the frontend")
-	if names := a.pm.RunningNames(); len(names) > 0 {
-		platform.ShowMainWindow(a.ctx)
-		a.NotifyQuitBlocked(names)
-		return
-	}
-
-	SetQuitting(true)
-	runtime.Quit(a.ctx)
 }
 
 // CheckUpdate queries the update backend (or GitHub) and returns the state.
@@ -1154,8 +1141,9 @@ func (a *App) shutdown(ctx context.Context) {
 	// Log shutdown
 	a.LogSystemError("shutdown", "Application is shutting down")
 
-	// Stop all running processes gracefully
-	a.pm.StopAll()
+	// Managed processes keep running: their pid identity is already persisted, and
+	// the next start adopts them. Stopping them here would defeat a plain restart.
+	a.LogSystemError("shutdown", "managed processes left running for the next start to adopt")
 
 	// Final log
 	a.LogSystemError("shutdown", "Application shutdown complete")

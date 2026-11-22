@@ -2,7 +2,7 @@
 
 # AgentHub
 
-AgentHub 是一个跨平台的桌面进程管理应用，使用 Wails、Go 和 Vue 3 + TypeScript 构建。它提供直观的界面来管理、监控和控制 Windows、macOS 和 Linux 上的后台进程。
+AgentHub 是一个 Agent 主导的本地工具箱合集，使用 Wails、Go 和 Vue 3 + TypeScript 构建。它以常驻服务的形式托管本地的 Agent 工具，把启动、停止、日志、开机自启和运行状态集中在一个桌面窗口里管理。
 
 ## 截图预览
 

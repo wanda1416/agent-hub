@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 )
 
 // setupProcessGroup sets up process group for Unix-like systems
@@ -57,6 +58,34 @@ func gracefulStop(cmd *exec.Cmd, done chan struct{}) error {
 	// Signal that we've sent SIGTERM
 	close(done)
 	return nil
+}
+
+// terminateProcessID stops an adopted process by pid, since the exec.Cmd
+// handle belonged to the AgentHub instance that has already exited.
+func terminateProcessID(pid int) {
+	if pid <= 0 {
+		return
+	}
+
+	signalGroup := func(sig syscall.Signal) {
+		if pgid, err := syscall.Getpgid(pid); err == nil {
+			_ = syscall.Kill(-pgid, sig)
+			return
+		}
+		_ = syscall.Kill(pid, sig)
+	}
+
+	signalGroup(syscall.SIGTERM)
+
+	deadline := time.Now().Add(GracefulStopTimeout)
+	for time.Now().Before(deadline) {
+		if !isProcessRunning(pid) {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	signalGroup(syscall.SIGKILL)
 }
 
 // isProcessRunning checks if a process is still running

@@ -5,7 +5,6 @@ import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import { Cpu, Settings } from 'lucide-vue-next'
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref } from 'vue'
 import AppLogo from './components/AppLogo.vue'
-import AppQuitBlockedModal from './components/AppQuitBlockedModal.vue'
 import UpdateDownloadModal from './components/UpdateDownloadModal.vue'
 import ProcessList from './views/Process.vue'
 import SettingsPage from './views/Setting.vue'
@@ -20,19 +19,6 @@ const appStore = useAppStore()
 
 // Active tab state
 const activeTab = ref('processes')
-
-// Quit-blocked warning (shown when the tray quit is blocked by running processes)
-const quitBlockedVisible = ref(false)
-const quitBlockedMessage = ref('')
-
-// onQuitBlocked shows the warning that prevents quitting while processes run
-const onQuitBlocked = (data: { count: number; names: string[] }) => {
-  quitBlockedVisible.value = true
-  quitBlockedMessage.value = appStore.t('messages.quitBlocked', {
-    count: data.count,
-    names: (data.names || []).join('、'),
-  })
-}
 
 // Track main page visit on mount
 onMounted(async () => {
@@ -113,16 +99,6 @@ onMounted(async () => {
     el.click()
     return true
   })
-  testActionSet('App.quitBlocked.isVisible', () => quitBlockedVisible.value)
-  testActionSet('App.quitBlocked.getMessage', () => quitBlockedMessage.value)
-  testActionSet('App.quitBlocked.simulate', (params: unknown) => {
-    onQuitBlocked(params as { count: number; names: string[] })
-    return true
-  })
-  testActionSet('App.quitBlocked.hide', () => {
-    quitBlockedVisible.value = false
-    return true
-  })
   testActionSet('App.getConfig', () => AppAPI.GetConfig())
 
   // ── 截图专用 action（prepare / cleanup）───────────────────────────────────
@@ -138,9 +114,6 @@ onMounted(async () => {
     }
   })
 
-  // 托盘退出被阻止时（仍有进程在运行）弹出提示，且不退出应用
-  EventsOn('app:quitBlocked', onQuitBlocked)
-
   // 配置由 CLI 或托盘等外部来源改变时，整份配置回填 Store，界面各处自动同步
   EventsOn('config:changed', (data: { config: Record<string, unknown>; origin: string }) => {
     appStore.applyConfig(data.config)
@@ -153,14 +126,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   EventsOff('autotest:call')
-  EventsOff('app:quitBlocked')
   EventsOff('config:changed')
   EventsOff('processes:changed')
   testActionUnset([
-    'App.quitBlocked.isVisible',
-    'App.quitBlocked.getMessage',
-    'App.quitBlocked.simulate',
-    'App.quitBlocked.hide',
     'App.getConfig',
   ])
 })
@@ -228,9 +196,6 @@ const themeConfig = computed(() => ({
         </div>
       </div>
     </div>
-
-    <!-- 托盘退出被阻止：仍有进程在运行 -->
-    <AppQuitBlockedModal v-model:open="quitBlockedVisible" :message="quitBlockedMessage" />
 
     <!-- 下载进度弹窗 / 后台下载指示 -->
     <UpdateDownloadModal />

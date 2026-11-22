@@ -1,7 +1,7 @@
 export default {
   brand: {
     name: 'AgentHub',
-    tagline: '进程调度中心',
+    tagline: 'Agent 工具箱',
   },
   common: {
     yes: '是',
@@ -157,8 +157,6 @@ export default {
     processRemoved: '进程已删除',
     operationFailed: '操作失败',
     confirmDelete: '确定要删除此进程吗？',
-    quitBlockedTitle: '无法退出',
-    quitBlocked: '仍有 {count} 个进程正在运行：{names}。请先停止所有进程后再退出。',
   },
   logs: {
     title: '日志流',
@@ -179,7 +177,7 @@ export default {
     subtitle: '个性化控制台体验。',
     language: '语言',
     about: '关于',
-    aboutDesc: 'AgentHub - 跨平台进程管理工具',
+    aboutDesc: 'AgentHub - 本地 Agent 工具箱',
     feedback: '工单反馈',
     group: {
       appearance: '外观',
