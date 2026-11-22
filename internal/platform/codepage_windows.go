@@ -8,7 +8,7 @@ import "golang.org/x/sys/windows"
 // machine use for redirected output. It mirrors the .NET runtime: prefer the
 // attached console's output code page, and fall back to the system ANSI code
 // page (CP936/GBK on Simplified Chinese Windows) when there is no console, as
-// is the case for a GUI host like ProcHub.
+// is the case for a GUI host like AgentHub.
 func activeCodePage() uint32 {
 	if cp, err := windows.GetConsoleOutputCP(); err == nil && cp != 0 {
 		return cp

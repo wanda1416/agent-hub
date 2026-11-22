@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"prochub/internal/config"
+	"agenthub/internal/config"
 )
 
 type Store struct {

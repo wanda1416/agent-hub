@@ -15,7 +15,7 @@ const (
 	// (see wails NewWindow: windowClassName = "wailsWindow").
 	mainWindowClass = "wailsWindow"
 	// mainWindowTitle must match options.App.Title in main.go.
-	mainWindowTitle = "ProcHub"
+	mainWindowTitle = "AgentHub"
 	// wmQuit asks a thread's message loop to end.
 	wmQuit = 0x0012
 )

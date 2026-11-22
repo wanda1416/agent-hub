@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"prochub/internal/control"
-	"prochub/internal/logging"
-	"prochub/internal/platform"
+	"agenthub/internal/control"
+	"agenthub/internal/logging"
+	"agenthub/internal/platform"
 
 	"github.com/wailsapp/wails/v2/pkg/options"
 )
@@ -16,7 +16,7 @@ import (
 // instance to answer, so a wedged first instance cannot delay a new launch.
 const runningInstanceTimeout = 3 * time.Second
 
-// handleExistingInstance checks whether another ProcHub instance is already
+// handleExistingInstance checks whether another AgentHub instance is already
 // serving the control endpoint for dataDir. When one is found it asks that
 // instance to show its window and returns true, so the caller exits before
 // Wails (and its WebView2 environment, which cannot share a user data folder

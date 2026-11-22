@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"prochub/internal/platform"
+	"agenthub/internal/platform"
 )
 
 // TestMain lets the test binary double as the child process the manager spawns,
 // so the run-loop guard can be exercised on every platform without depending on
 // a shell or on OS-specific commands.
 func TestMain(m *testing.M) {
-	if mode := os.Getenv("PROCHUB_TEST_CHILD"); mode != "" {
+	if mode := os.Getenv("AGENTHUB_TEST_CHILD"); mode != "" {
 		os.Exit(runTestChild(mode))
 	}
 	os.Exit(m.Run())
@@ -26,12 +26,12 @@ func TestMain(m *testing.M) {
 // runTestChild implements the child behaviours used by the tests:
 //   - "fail":                exit non-zero immediately
 //   - "run":                 record the pid and stay alive
-//   - "fail-until-flag":     fail until PROCHUB_TEST_CHILD_FLAG exists, then "run"
+//   - "fail-until-flag":     fail until AGENTHUB_TEST_CHILD_FLAG exists, then "run"
 //   - "count-fail":          record the pid and exit non-zero
 func runTestChild(mode string) int {
 	switch mode {
 	case "fail-until-flag":
-		if _, err := os.Stat(os.Getenv("PROCHUB_TEST_CHILD_FLAG")); err != nil {
+		if _, err := os.Stat(os.Getenv("AGENTHUB_TEST_CHILD_FLAG")); err != nil {
 			return 1
 		}
 		fallthrough
@@ -47,10 +47,10 @@ func runTestChild(mode string) int {
 	}
 }
 
-// recordPID appends the child pid to $PROCHUB_TEST_CHILD_PIDFILE so a test can
+// recordPID appends the child pid to $AGENTHUB_TEST_CHILD_PIDFILE so a test can
 // count how many children one entry actually spawned.
 func recordPID() {
-	path := os.Getenv("PROCHUB_TEST_CHILD_PIDFILE")
+	path := os.Getenv("AGENTHUB_TEST_CHILD_PIDFILE")
 	if path == "" {
 		return
 	}
@@ -63,7 +63,7 @@ func recordPID() {
 }
 
 func testChildEnv(mode string, extra map[string]string) Environment {
-	env := Environment{"PROCHUB_TEST_CHILD": mode}
+	env := Environment{"AGENTHUB_TEST_CHILD": mode}
 	for k, v := range extra {
 		env[k] = v
 	}
@@ -115,8 +115,8 @@ func TestStartDuringRetryCooldownKeepsSingleChild(t *testing.T) {
 		Name:    "demo",
 		Command: os.Args[0],
 		Env: testChildEnv("fail-until-flag", map[string]string{
-			"PROCHUB_TEST_CHILD_FLAG":    flag,
-			"PROCHUB_TEST_CHILD_PIDFILE": pidFile,
+			"AGENTHUB_TEST_CHILD_FLAG":    flag,
+			"AGENTHUB_TEST_CHILD_PIDFILE": pidFile,
 		}),
 		RestartPolicy: RestartOnFailure,
 	})
@@ -162,7 +162,7 @@ func TestStopDuringRetryCooldownEndsLoop(t *testing.T) {
 		Name:    "demo",
 		Command: os.Args[0],
 		Env: testChildEnv("count-fail", map[string]string{
-			"PROCHUB_TEST_CHILD_PIDFILE": pidFile,
+			"AGENTHUB_TEST_CHILD_PIDFILE": pidFile,
 		}),
 		RestartPolicy: RestartOnFailure,
 	})
@@ -216,7 +216,7 @@ func TestStopThenStartLeavesSingleChild(t *testing.T) {
 		Name:    "demo",
 		Command: os.Args[0],
 		Env: testChildEnv("run", map[string]string{
-			"PROCHUB_TEST_CHILD_PIDFILE": pidFile,
+			"AGENTHUB_TEST_CHILD_PIDFILE": pidFile,
 		}),
 		RestartPolicy: RestartAlways,
 	})

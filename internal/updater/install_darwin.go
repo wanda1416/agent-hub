@@ -33,7 +33,7 @@ func installPlatform(ctx context.Context, asset Asset, downloaded string, opts I
 		return InstallResult{}, fmt.Errorf("%w: not running from an .app bundle", ErrUnsupported)
 	}
 
-	tmpDir, err := os.MkdirTemp("", "prochub-update-")
+	tmpDir, err := os.MkdirTemp("", "agenthub-update-")
 	if err != nil {
 		return InstallResult{}, err
 	}
@@ -86,7 +86,7 @@ func currentAppBundle() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// .../ProcHub.app/Contents/MacOS/ProcHub
+	// .../AgentHub.app/Contents/MacOS/AgentHub
 	app := filepath.Dir(filepath.Dir(filepath.Dir(exe)))
 	if strings.HasSuffix(app, ".app") {
 		return app, nil

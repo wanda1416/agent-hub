@@ -1,4 +1,4 @@
-module prochub
+module agenthub
 
 go 1.24.0
 

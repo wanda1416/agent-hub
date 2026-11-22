@@ -188,7 +188,7 @@ const themeConfig = computed(() => ({
         <div class="sidebar">
           <div class="logo-area">
             <AppLogo class="logo-image" />
-            <span class="logo-text">ProcHub</span>
+            <span class="logo-text">AgentHub</span>
           </div>
           <div class="sidebar-tabs">
             <a-button

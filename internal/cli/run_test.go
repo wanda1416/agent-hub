@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"prochub/internal/control"
-	"prochub/internal/process"
+	"agenthub/internal/control"
+	"agenthub/internal/process"
 )
 
 type stubBackend struct {
@@ -181,7 +181,7 @@ func TestRunStatusAndLogs(t *testing.T) {
 		t.Fatalf("expected exit 0 for status, got %d", code)
 	}
 	out := opts.Stdout.(*bytes.Buffer).String()
-	if !strings.Contains(out, "ProcHub") || !strings.Contains(out, "mac") {
+	if !strings.Contains(out, "AgentHub") || !strings.Contains(out, "mac") {
 		t.Fatalf("unexpected status output: %q", out)
 	}
 
@@ -266,7 +266,7 @@ func TestRunVersionAndHelp(t *testing.T) {
 	if code := Run([]string{"help"}, opts); code != 0 {
 		t.Fatalf("expected exit 0 for help, got %d", code)
 	}
-	if !strings.Contains(opts.Stdout.(*bytes.Buffer).String(), "prochub process") {
+	if !strings.Contains(opts.Stdout.(*bytes.Buffer).String(), "agenthub process") {
 		t.Fatal("help output missing usage")
 	}
 

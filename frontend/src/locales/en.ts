@@ -1,6 +1,6 @@
 export default {
   brand: {
-    name: 'ProcHub',
+    name: 'AgentHub',
     tagline: 'Process Control Desk',
   },
   common: {
@@ -140,7 +140,7 @@ export default {
       overwriteHint: 'Overwrite only updates the configuration; running processes use it after their next restart.',
       importConfirm: 'Import',
       importEmpty: 'The file has no processes to import',
-      importInvalid: 'Could not read this file. Make sure it was exported by ProcHub',
+      importInvalid: 'Could not read this file. Make sure it was exported by AgentHub',
       importDone: 'Import finished: {imported} added, {updated} updated, {skipped} skipped',
       importNothing: 'Nothing was imported ({skipped} skipped, {invalid} invalid)',
       importFailed: 'Import failed',
@@ -179,7 +179,7 @@ export default {
     subtitle: 'Personalize your console experience.',
     language: 'Language',
     about: 'About',
-    aboutDesc: 'ProcHub - cross-platform process manager',
+    aboutDesc: 'AgentHub - cross-platform process manager',
     feedback: 'Feedback',
     group: {
       appearance: 'Appearance',
@@ -196,13 +196,13 @@ export default {
     languageDesc: 'Select your language',
     autoStart: {
       title: 'Launch at Startup',
-      desc: 'Automatically start ProcHub when system boots',
+      desc: 'Automatically start AgentHub when system boots',
     },
     wsl: {
       title: 'WSL',
       desc: 'View status and start/stop manually',
       autoStartTitle: 'Launch WSL at Boot',
-      autoStartDesc: 'Start WSL at boot; ProcHub auto-start is not required',
+      autoStartDesc: 'Start WSL at boot; AgentHub auto-start is not required',
       statusRunning: 'Running',
       statusStarting: 'Starting',
       statusStopped: 'Stopped',

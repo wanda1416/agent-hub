@@ -1,6 +1,6 @@
 export default {
   brand: {
-    name: 'ProcHub',
+    name: 'AgentHub',
     tagline: '进程调度中心',
   },
   common: {
@@ -140,7 +140,7 @@ export default {
       overwriteHint: '覆盖只更新配置；正在运行的进程需重启后才会使用新配置。',
       importConfirm: '导入',
       importEmpty: '文件中没有可导入的进程',
-      importInvalid: '无法读取该文件，请确认是 ProcHub 导出的进程文件',
+      importInvalid: '无法读取该文件，请确认是 AgentHub 导出的进程文件',
       importDone: '导入完成：新增 {imported}，更新 {updated}，跳过 {skipped}',
       importNothing: '没有进程被导入（跳过 {skipped}，无效 {invalid}）',
       importFailed: '导入失败',
@@ -179,7 +179,7 @@ export default {
     subtitle: '个性化控制台体验。',
     language: '语言',
     about: '关于',
-    aboutDesc: 'ProcHub - 跨平台进程管理工具',
+    aboutDesc: 'AgentHub - 跨平台进程管理工具',
     feedback: '工单反馈',
     group: {
       appearance: '外观',
@@ -196,13 +196,13 @@ export default {
     languageDesc: '选择您的语言',
     autoStart: {
       title: '开机自动启动',
-      desc: '系统启动时自动运行 ProcHub',
+      desc: '系统启动时自动运行 AgentHub',
     },
     wsl: {
       title: 'WSL',
       desc: '查看运行状态并手动启停',
       autoStartTitle: 'WSL 开机自启',
-      autoStartDesc: '系统启动时自动启动 WSL，无需开启 ProcHub 自启',
+      autoStartDesc: '系统启动时自动启动 WSL，无需开启 AgentHub 自启',
       statusRunning: '运行中',
       statusStarting: '启动中',
       statusStopped: '已停止',

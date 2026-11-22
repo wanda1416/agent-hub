@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"prochub/internal/process"
+	"agenthub/internal/process"
 )
 
 // Client talks to a running application's control server. Build it with
@@ -40,7 +40,7 @@ func NewClientWithTimeout(dataDir string, timeout time.Duration) (*Client, error
 		return nil, err
 	}
 	if info.Port <= 0 || info.Token == "" {
-		return nil, errors.New("auth.json 内容无效，请重启 ProcHub")
+		return nil, errors.New("auth.json 内容无效，请重启 AgentHub")
 	}
 	if timeout <= 0 {
 		timeout = defaultClientTimeout
@@ -149,7 +149,7 @@ func (c *Client) do(method, path string, body interface{}, out interface{}) erro
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("连接 ProcHub 失败：%w", err)
+		return fmt.Errorf("连接 AgentHub 失败：%w", err)
 	}
 	defer resp.Body.Close()
 

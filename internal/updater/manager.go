@@ -63,7 +63,7 @@ func New(opts Options) *Manager {
 		opts.Platform = CurrentPlatform()
 	}
 	if opts.UserAgent == "" {
-		opts.UserAgent = "ProcHub-Updater"
+		opts.UserAgent = "AgentHub-Updater"
 	}
 	return &Manager{
 		opts:   opts,

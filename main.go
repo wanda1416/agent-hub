@@ -7,9 +7,9 @@ import (
 	goruntime "runtime"
 	"sync/atomic"
 
-	"prochub/internal/cli"
-	"prochub/internal/logging"
-	"prochub/internal/platform"
+	"agenthub/internal/cli"
+	"agenthub/internal/logging"
+	"agenthub/internal/platform"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/menu"
@@ -142,7 +142,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:         "ProcHub",
+		Title:         "AgentHub",
 		Width:         1024,
 		Height:        720,
 		MinWidth:      900,
@@ -196,7 +196,7 @@ func main() {
 				HideToolbarSeparator:       true,
 			},
 			About: &mac.AboutInfo{
-				Title:   "ProcHub",
+				Title:   "AgentHub",
 				Message: "Process Manager",
 				Icon:    icon,
 			},
@@ -217,7 +217,7 @@ func main() {
 
 		// Single instance lock - show window when second instance is launched
 		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId: "prochub-app-unique-id",
+			UniqueId: "agenthub-app-unique-id",
 			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
 				logSecondInstanceLaunch(secondInstanceData)
 				if globalApp != nil && globalApp.ctx != nil {

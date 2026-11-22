@@ -1,7 +1,7 @@
 # Build outputs
 build/bin/
-prochub
-build/prochub-test
+agenthub
+build/agenthub-test
 
 # Dependencies
 node_modules/

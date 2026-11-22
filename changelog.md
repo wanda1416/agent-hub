@@ -12,7 +12,7 @@
 - 新增：默认跟随最新的 Release，beta 打包完就能收到，也能切到只看正式版或只看测试版；客户端会自己比较版本号，不会把用户降成旧版
 - 新增：设置页版本区显示新版本号、更新说明和下载进度，下载完直接点「立即重启并更新」；只有 dmg、deb 这类不能自动替换的包时，改为打开下载页
 - 新增：更新前必须先停掉所有托管进程，还有进程在跑会明确提示；更新完成后只拉起设了开机自启的进程
-- 新增：CLI 新增 `prochub update check|download`，可以直接跑通从检查到下载校验的整条链路
+- 新增：CLI 新增 `agenthub update check|download`，可以直接跑通从检查到下载校验的整条链路
 - 新增：进程列表工具栏新增「按状态分组」开关，默认开启，选择会记住。关掉后卡片回到单一网格并按 ID 固定位置，启停一个进程不会把其他卡片挤到下一行
 - 新增：进程命令超长时，卡片上显示「头…尾」，鼠标悬停可以看完整命令，不再换行撑高卡片
 - 优化：发版流程统一，main 分支快照和 tag 发布都会产出并公证 macOS zip、上传 `checksums.txt`，带后缀的 tag 自动标为 pre-release
@@ -28,19 +28,19 @@
 
 ## v0.7.0 命令行工具与本地控制接口上线，进程管理全面升级
 
-- 新增：`internal/config` 新增演示数据播种能力（`SeedEnabled` / `SeedDemoConfig` / `DemoProcesses`），仅在 `PROCHUB_SEED` 为真且进程列表为空时填充，保留语言/主题等既有偏好
+- 新增：`internal/config` 新增演示数据播种能力（`SeedEnabled` / `SeedDemoConfig` / `DemoProcesses`），仅在 `AGENTHUB_SEED` 为真且进程列表为空时填充，保留语言/主题等既有偏好
 - 新增：进程卡片新增「详情」按钮，打开只读「进程配置详情」弹窗（基础配置 / 运行状态 / 高级设置 / 环境变量），补齐运行中进程因编辑按钮被禁用而无法查看配置的缺口
 - 新增：控制接口新增 `POST /control/show`（客户端 `Client.Show`），供二次启动的进程请求已运行实例恢复并聚焦主窗口
 - 新增：进程新增/编辑弹窗的环境变量支持「文本导入」——粘贴标准 `.env` 文本（每行 `KEY=VALUE`，支持 `#` 注释、空行与引号包裹的值）一键导入，同名键覆盖已有值、新键追加
 - 新增：运行时诊断——渲染进程错误（未捕获异常、Promise 拒绝、Vue 错误、脚本/资源加载失败）先写入本地系统日志再上报远端，并在启动与挂载阶段写入 `renderer.boot` / `renderer.mounted` 标记，便于区分「未加载」与「挂载崩溃」导致的白屏
 - 新增：Go 暴露方法统一 panic 兜底（`recoverPanic`），panic 时把方法名与堆栈写入系统日志并继续向上抛出错误，避免崩溃被静默吞掉
-- 新增：设置页在生效数据目录非默认（`PROCHUB_DATA_ROOT` 或 `client.json` 的 `dataRoot` 覆盖）时，显示实际运行路径并支持一键打开定位到该目录
+- 新增：设置页在生效数据目录非默认（`AGENTHUB_DATA_ROOT` 或 `client.json` 的 `dataRoot` 覆盖）时，显示实际运行路径并支持一键打开定位到该目录
 - 新增：新增 `DESIGN.md` 设计规范，统一颜色令牌、圆角、间距、字体、组件与深色模式约定
 - 新增：命令行工具（与主程序同一可执行文件，无参启动界面，带子命令时执行 CLI）：`process list/start/stop/logs`（日志支持 `--tail`/`--follow`）、`config get/set theme|language|autostart|autostart-wsl`、`wsl status/start/stop/restart`、`status`、`version`，通过启动时写入数据目录的 `auth.json`（端口 + 令牌）与运行中的应用通信
 - 新增：应用启动时在 `127.0.0.1:53093` 启动本地控制接口（携带令牌鉴权），退出时自动清理 `auth.json`
 - 新增：主题改为后端配置存储（`AppConfig.theme`），新增 `SetTheme`/`SetLocale` 接口并统一配置写入路径；CLI 或外部变更主题/语言时通过事件实时同步到界面
 - 新增：进程列表或状态变更时广播 `processes:changed` 事件，CLI 启停进程后界面自动刷新为最新状态
-- 新增：CLI 新增独立 `wsl` 子命令：`prochub wsl status|start|stop|restart`，用于查看 WSL 状态并手动启停；控制接口新增 `/control/wsl` 系列端点
+- 新增：CLI 新增独立 `wsl` 子命令：`agenthub wsl status|start|stop|restart`，用于查看 WSL 状态并手动启停；控制接口新增 `/control/wsl` 系列端点
 - 新增：WSL 管理新增 `Stop` 能力（`wsl --shutdown`），补齐此前只有启动/重启的缺口
 - 优化：新增进程详情弹窗 UI 测试，以及「运行中进程查看详情」业务逻辑测试
 - 优化：进程列表改为响应式多列网格（窄屏 1 列 / 中屏 2 列 / 宽屏 3 列），并按状态分组（运行中 / 失败 / 已停止），新增带实时计数的状态筛选栏（全部 / 运行中 / 已停止 / 失败），解决进程数量达到 10 个以上时单列长滚动、难以定位的问题
@@ -52,7 +52,7 @@
 - 优化：Wails 框架内部日志（绑定调用错误、恢复的 panic、启动阶段日志）通过 `WailsLogger` 接入系统日志文件，与业务日志统一落盘
 - 优化：设置页改为分组布局（外观 / 启动 / Windows 子系统（WSL）/ 通用）并新增 `SettingGroup` 分组标题组件，消除 WSL 项被缩进成「开机自动启动」子项的层级误导
 - 优化：WSL 拆分出独立 `SettingWSL.vue`，启停按钮按状态动态显示（运行中只给「停止/重启」、已停止只给「启动/重启」），移除无意义的禁用按钮占位
-- 优化：两个开机自启开关通过分组与图标区分——ProcHub 自启改用 Rocket 图标，「WSL 开机自启」归入 WSL 分组并简化文案
+- 优化：两个开机自启开关通过分组与图标区分——AgentHub 自启改用 Rocket 图标，「WSL 开机自启」归入 WSL 分组并简化文案
 - 优化：深色模式改由 `ConfigProvider` 主题统一驱动，移除 `style.css` 中 30 余条 `.dark .ant-* !important` 双重覆盖，深色主色统一为 `#34d399`
 - 优化：界面字体改为系统原生字体栈，移除 Google Fonts CDN 外链，避免离线或受限网络下加载失败
 - 优化：设置页分区图标统一为 Emerald 配色（移除 indigo/green/purple/blue 混用），并修复主题切换按钮中永不生效的 indigo 覆盖
@@ -86,14 +86,14 @@
 - 新增：托盘退出时若仍有进程在运行则阻止退出，自动显示窗口并在界面弹出提示（列出运行中的进程名），需先手动停止全部进程后才能退出；`QuitApp` 采用相同策略
 - 新增：Windows 下设置页「开机自动启动」下方新增「自动启动 WSL」子选项，仅当开启开机自动启动时生效；开启后会显示 WSL 运行状态（运行中/已停止/未安装）并支持「开启」「重启」操作，应用随开机启动时自动拉起 WSL
 - 新增：新增 `make update-version VERSION=x.y.z` 命令（`scripts/update-version.sh`），一键同步更新 `app.go`、根/前端 `package.json`、两个 `package-lock.json`、`tests/screenshot.ts` 中的版本号，支持 `x.y.z` 及 `x.y.z-beta` 格式并校验非法输入
-- 新增：数据目录支持 `PROCHUB_DATA_ROOT` 环境变量覆盖（优先级最高，支持 `~/` 展开），并新增 `~/.prochub/client.json` 的 `dataRoot` 字段（默认 `~/.prochub/data`）作为第二优先级；正式安装版可通过 macOS Info.plist 的 `LSEnvironment` 注入，实现正式使用数据与开发测试完全隔离
-- 新增：新增跨平台数据目录解析模块（`internal/platform/appdir`），统一将配置与日志存储至 `~/.prochub` 并自动创建目录
+- 新增：数据目录支持 `AGENTHUB_DATA_ROOT` 环境变量覆盖（优先级最高，支持 `~/` 展开），并新增 `~/.agenthub/client.json` 的 `dataRoot` 字段（默认 `~/.agenthub/data`）作为第二优先级；正式安装版可通过 macOS Info.plist 的 `LSEnvironment` 注入，实现正式使用数据与开发测试完全隔离
+- 新增：新增跨平台数据目录解析模块（`internal/platform/appdir`），统一将配置与日志存储至 `~/.agenthub` 并自动创建目录
 - 优化：数据目录解析逻辑收敛至平台模块，兼容 macOS/Linux/Windows（含 HOME 环境变量缺失时的兜底处理）
 - 修复：Windows 下被隐藏的窗口无法恢复显示：Wails 的 `WindowShow`/`WindowUnminimise` 仅调用 `SW_SHOW`，对 `SW_HIDE` 隐藏的窗口无效，新增 `_windows` 平台实现按窗口类名与标题定位 HWND 并调用 `SW_RESTORE`；同时统一为 `platform.ShowMainWindow`（应用于托盘显示、二次启动、退出受阻等场景）
 - 修复：Windows 下托盘「退出」被运行中进程阻止时，若界面此前已隐藏则先恢复并显示界面，再弹出提示，避免提示弹窗用户看不到
 - 修复：托盘菜单「退出」无法真正退出应用（图标消失但进程残留）：新增 quitting 标志区分「关闭窗口=隐藏」与「真正退出」，退出时 `OnBeforeClose` 不再拦截关闭，应用可正常退出
 - 修复：Windows 下调用 `wsl.exe` 不再弹出黑色控制台窗口（`CREATE_NO_WINDOW`）；启动 WSL 改为用登录 shell（`/bin/bash -l -i`）拉起并持有常驻，确保 `/etc/profile`、`~/.profile`、`~/.bashrc` 生效（环境与命令行 `wsl` 一致），并新增「启动中」状态以覆盖 WSL 冷启动耗时较长的情况
-- 修复：`make dev-seed-test` 进程清理由 `pkill -f ProcHub` 改为精确匹配 `build/bin/ProcHub`，避免误杀已安装的正式版 ProcHub.app；测试启动前强制清除 `PROCHUB_DATA_ROOT`，确保种子数据只写入默认目录
+- 修复：`make dev-seed-test` 进程清理由 `pkill -f AgentHub` 改为精确匹配 `build/bin/AgentHub`，避免误杀已安装的正式版 AgentHub.app；测试启动前强制清除 `AGENTHUB_DATA_ROOT`，确保种子数据只写入默认目录
 - 修复：`ProcessEditModal.vue` 使用 `FileSearch` 图标但未导入（测试拦截 Vue warn 时发现）
 
 ## v0.5.0 App Store 构建支持，组件重构更易维护

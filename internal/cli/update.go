@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"prochub/internal/updater"
+	"agenthub/internal/updater"
 )
 
-const defaultUpdateEndpoint = "https://open.tecmz.com/open_app/ProcHub/app_manager/updater"
+const defaultUpdateEndpoint = "https://open.tecmz.com/open_app/AgentHub/app_manager/updater"
 
-// runUpdate implements `prochub update check|download`. It talks to the update
+// runUpdate implements `agenthub update check|download`. It talks to the update
 // backend directly and does not need the GUI to be running, which makes it the
 // end-to-end test entry point for the release pipeline.
 func runUpdate(args []string, opts Options) int {
@@ -40,13 +40,13 @@ func runUpdate(args []string, opts Options) int {
 		return 2
 	}
 	if *endpoint == "" {
-		*endpoint = os.Getenv("PROCHUB_UPDATE_ENDPOINT")
+		*endpoint = os.Getenv("AGENTHUB_UPDATE_ENDPOINT")
 	}
 	if *endpoint == "" {
 		*endpoint = defaultUpdateEndpoint
 	}
 	if *dir == "" {
-		*dir = filepath.Join(os.TempDir(), "prochub-update")
+		*dir = filepath.Join(os.TempDir(), "agenthub-update")
 	}
 
 	manager := updater.New(updater.Options{
@@ -55,7 +55,7 @@ func runUpdate(args []string, opts Options) int {
 		Channel:        *channel,
 		DataDir:        *dir,
 		Platform:       updater.CurrentPlatform(),
-		UserAgent:      "ProcHub-CLI/" + opts.Version,
+		UserAgent:      "AgentHub-CLI/" + opts.Version,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
@@ -121,11 +121,11 @@ func printUpdateState(out io.Writer, state updater.State, asJSON bool) {
 const updateUsage = `更新命令
 
 用法：
-  prochub update check [选项]                 检查最新版本
-  prochub update download [选项]              检查并下载、校验最新版本
+  agenthub update check [选项]                 检查最新版本
+  agenthub update download [选项]              检查并下载、校验最新版本
 
 选项：
-  --endpoint URL      更新后端地址（默认取 PROCHUB_UPDATE_ENDPOINT）
+  --endpoint URL      更新后端地址（默认取 AGENTHUB_UPDATE_ENDPOINT）
   --channel NAME      latest / stable / beta（默认 latest，含 beta 打包）
   --current VERSION   当前版本（默认取本程序版本）
   --dir PATH          下载目录

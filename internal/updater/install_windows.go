@@ -39,7 +39,7 @@ func installPlatform(ctx context.Context, asset Asset, downloaded string, opts I
 		return InstallResult{}, fmt.Errorf("write new executable: %w", err)
 	}
 
-	script := filepath.Join(os.TempDir(), fmt.Sprintf("prochub-update-%d.bat", os.Getpid()))
+	script := filepath.Join(os.TempDir(), fmt.Sprintf("agenthub-update-%d.bat", os.Getpid()))
 	body := "@echo off\r\n" +
 		"setlocal\r\n" +
 		":wait\r\n" +

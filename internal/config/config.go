@@ -1,6 +1,6 @@
 package config
 
-import "prochub/internal/process"
+import "agenthub/internal/process"
 
 type AppConfig struct {
 	Locale        string               `json:"locale"`

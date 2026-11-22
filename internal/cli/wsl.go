@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"prochub/internal/control"
+	"agenthub/internal/control"
 )
 
 func runWSL(client *control.Client, args []string, opts Options) error {
 	if len(args) == 0 {
-		return errors.New("用法：prochub wsl <status|start|stop|restart>")
+		return errors.New("用法：agenthub wsl <status|start|stop|restart>")
 	}
 	switch args[0] {
 	case "status":

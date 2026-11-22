@@ -165,7 +165,7 @@ func (t *TrayManager) onReady() {
 	} else {
 		systray.SetIcon(t.trayIcon)
 	}
-	systray.SetTooltip("ProcHub - Process Manager")
+	systray.SetTooltip("AgentHub - Process Manager")
 
 	// On Windows a left click on the tray icon shows the main window while a
 	// right click shows the context menu (the systray default). On other

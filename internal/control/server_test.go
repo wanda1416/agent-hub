@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"prochub/internal/process"
+	"agenthub/internal/process"
 )
 
 // fakeBackend is an in-memory Backend used to exercise the control server and

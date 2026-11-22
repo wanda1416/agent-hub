@@ -29,7 +29,7 @@ onUnmounted(() => {
 })
 
 const openGithub = () => {
-  BrowserOpenURL('https://github.com/modstart-lib/prochub')
+  BrowserOpenURL('https://github.com/wanda1416/agent-hub')
 }
 
 const handleFeedbackMessage = async (event: MessageEvent) => {

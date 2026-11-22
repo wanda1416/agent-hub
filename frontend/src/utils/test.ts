@@ -1,5 +1,5 @@
 /**
- * window.__test — ProcHub 界面自动化测试辅助工具
+ * window.__test — AgentHub 界面自动化测试辅助工具
  *
  * 核心思路：action 注册时机即页面就绪时机。
  * 测试侧通过 callAction 等待 action 被注册，无需额外的 ready 状态。

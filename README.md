@@ -1,8 +1,8 @@
-[English](#prochub) | [中文](README.zh-CN.md)
+[English](#agenthub) | [中文](README.zh-CN.md)
 
-# ProcHub
+# AgentHub
 
-ProcHub is a cross-platform desktop application for process management, built with Wails, Go, and Vue 3 + TypeScript. It provides an intuitive interface to manage, monitor, and control background processes across Windows, macOS, and Linux.
+AgentHub is a cross-platform desktop application for process management, built with Wails, Go, and Vue 3 + TypeScript. It provides an intuitive interface to manage, monitor, and control background processes across Windows, macOS, and Linux.
 
 ## Screenshot
 
@@ -59,31 +59,31 @@ Theme, language, auto-start on boot, version update, and about are managed on th
 
 ### CLI
 
-ProcHub ships with a command line interface in the same executable. Running the
+AgentHub ships with a command line interface in the same executable. Running the
 binary without a known subcommand starts the GUI as usual; passing a subcommand
 runs the CLI, which talks to the running app through a local control endpoint
 (port and token are published to `auth.json` in the data directory on startup).
 
 ```bash
-# Create a `prochub` command pointing at the installed app (macOS)
+# Create a `agenthub` command pointing at the installed app (macOS)
 make cli
 
-prochub process list                       # list all processes
-prochub process start <id>                 # start a process
-prochub process stop <id>                  # stop a process
-prochub process logs <id> --tail 200       # show the last 200 log lines
-prochub process logs <id> --follow         # stream new log lines
-prochub config get                         # show settings
-prochub config set theme light|dark        # set the light/dark theme
-prochub config set language zh|en          # set the UI language
-prochub config set autostart on|off        # toggle auto-start on boot
-prochub config set autostart-wsl on|off    # toggle auto-starting WSL on boot
-prochub wsl status                         # show WSL runtime status
-prochub wsl start                          # start WSL
-prochub wsl stop                           # stop WSL
-prochub wsl restart                        # restart WSL
-prochub status                             # show app status
-prochub version                            # show the version
+agenthub process list                       # list all processes
+agenthub process start <id>                 # start a process
+agenthub process stop <id>                  # stop a process
+agenthub process logs <id> --tail 200       # show the last 200 log lines
+agenthub process logs <id> --follow         # stream new log lines
+agenthub config get                         # show settings
+agenthub config set theme light|dark        # set the light/dark theme
+agenthub config set language zh|en          # set the UI language
+agenthub config set autostart on|off        # toggle auto-start on boot
+agenthub config set autostart-wsl on|off    # toggle auto-starting WSL on boot
+agenthub wsl status                         # show WSL runtime status
+agenthub wsl start                          # start WSL
+agenthub wsl stop                           # stop WSL
+agenthub wsl restart                        # restart WSL
+agenthub status                             # show app status
+agenthub version                            # show the version
 ```
 
 Process log files are stored under the data directory (`<dataDir>/<logDir>/<id>`),
@@ -126,7 +126,7 @@ wails build
 
 ## 💬 Join the Community
 
-> Add friend with note "ProcHub"
+> Add friend with note "AgentHub"
 
 | WeChat Group | QQ Group |
 |:------------:|:--------:|

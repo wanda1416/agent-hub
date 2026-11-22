@@ -3,7 +3,7 @@
 # Release the test lock created by acquire-lock.sh.
 # Called from the Makefile EXIT trap: bash scripts/release-lock.sh $$
 
-LOCK_FILE="${PROCHUB_LOCK_FILE:-_temp/dev-seed-test.lock}"
+LOCK_FILE="${AGENTHUB_LOCK_FILE:-_temp/dev-seed-test.lock}"
 PID="${1:-}"
 
 [ -f "$LOCK_FILE" ] || exit 0

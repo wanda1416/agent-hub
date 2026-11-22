@@ -8,7 +8,7 @@ on:
 env:
   GO_VERSION: '1.24'
   NODE_VERSION: '20'
-  APP_NAME: 'ProcHub'
+  APP_NAME: 'AgentHub'
 
 jobs:
   build:
@@ -116,7 +116,7 @@ jobs:
         with:
           name: windows-artifact
           path: |
-            build/bin/ProcHub.exe
+            build/bin/AgentHub.exe
 
       - name: Upload Artifact Macos
         if: runner.os == 'macOS'
@@ -124,7 +124,7 @@ jobs:
         with:
           name: macos-artifact
           path: |
-            build/bin/ProcHub.app
+            build/bin/AgentHub.app
 
       - name: Upload Artifact Linux
         if: runner.os == 'Linux'
@@ -132,7 +132,7 @@ jobs:
         with:
           name: linux-artifact
           path: |
-            build/bin/ProcHub
+            build/bin/AgentHub
 
   # ── Notify ────────────────────────────────────────────────────────────────────
   notify:

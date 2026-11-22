@@ -1,8 +1,8 @@
-# Makefile for ProcHub Wails Application
+# Makefile for AgentHub Wails Application
 
 # App Store / TestFlight signing config
-BUNDLE_ID            = com.modstart.prochub
-APP_NAME             = ProcHub
+BUNDLE_ID            = com.modstart.agenthub
+APP_NAME             = AgentHub
 APP_PATH             = build/bin/$(APP_NAME).app
 PROVISION_PROFILE   ?= $(HOME)/Library/MobileDevice/Provisioning\ Profiles/$(APP_NAME)_AppStore.provisionprofile
 # Application signing identity: "3rd Party Mac Developer Application: Your Name (TEAMID)"
@@ -25,7 +25,7 @@ help:
 	@echo "  install  - Install dependencies"
 	@echo "  check-deps - Check if required tools are installed"
 	@echo "  update-version - Update version across all sources (make update-version 0.7.0)"
-	@echo "  cli      - Symlink the installed app as 'prochub' into PATH for CLI usage"
+	@echo "  cli      - Symlink the installed app as 'agenthub' into PATH for CLI usage"
 
 # Check if required tools are installed
 check-deps:

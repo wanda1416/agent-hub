@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"prochub/internal/config"
-	"prochub/internal/control"
-	"prochub/internal/logging"
-	"prochub/internal/process"
+	"agenthub/internal/config"
+	"agenthub/internal/control"
+	"agenthub/internal/logging"
+	"agenthub/internal/process"
 )
 
 // controlBridge exposes the application to the local control server. It is a

@@ -67,11 +67,11 @@ func installPlatform(ctx context.Context, asset Asset, downloaded string, opts I
 	}
 	if err := scheduleRelaunch(target); err != nil {
 		// The replacement already succeeded; a failed relaunch only means the
-		// user has to start ProcHub manually.
+		// user has to start AgentHub manually.
 		logf(opts, "cannot schedule relaunch: %v", err)
 	}
 	return InstallResult{
-		Message:         "AppImage replaced; ProcHub is restarting with the new version",
+		Message:         "AppImage replaced; AgentHub is restarting with the new version",
 		RestartRequired: true,
 	}, nil
 }
@@ -83,7 +83,7 @@ func scheduleRelaunch(target string) error {
 	if !relaunchAfterInstall {
 		return nil
 	}
-	script := filepath.Join(os.TempDir(), fmt.Sprintf("prochub-update-%d.sh", os.Getpid()))
+	script := filepath.Join(os.TempDir(), fmt.Sprintf("agenthub-update-%d.sh", os.Getpid()))
 	quoted := "'" + strings.ReplaceAll(target, "'", `'\''`) + "'"
 	content := "#!/bin/sh\n" +
 		"while kill -0 " + strconv.Itoa(os.Getpid()) + " 2>/dev/null; do sleep 0.2; done\n" +

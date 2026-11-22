@@ -14,7 +14,7 @@ mkdir -p "$LOCK_ROOT"
 LOCK_FILE="${LOCK_FILE:-$LOCK_ROOT/${LOCK_NAME}.lock}"
 # Store an absolute path so the EXIT trap can release the lock from any cwd.
 LOCK_FILE="$(cd "$(dirname "$LOCK_FILE")" && pwd)/$(basename "$LOCK_FILE")"
-export PROCHUB_LOCK_FILE="$LOCK_FILE"
+export AGENTHUB_LOCK_FILE="$LOCK_FILE"
 
 LAST_PID=""
 while :; do

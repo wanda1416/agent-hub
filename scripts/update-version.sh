@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Update ProcHub version across all version source files.
+# Update AgentHub version across all version source files.
 # Usage: scripts/update-version.sh <version>   e.g. 0.7.0 or 0.7.0-beta
 set -euo pipefail
 

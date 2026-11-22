@@ -1,8 +1,8 @@
-[English](README.md) | [中文](#prochub)
+[English](README.md) | [中文](#agenthub)
 
-# ProcHub
+# AgentHub
 
-ProcHub 是一个跨平台的桌面进程管理应用，使用 Wails、Go 和 Vue 3 + TypeScript 构建。它提供直观的界面来管理、监控和控制 Windows、macOS 和 Linux 上的后台进程。
+AgentHub 是一个跨平台的桌面进程管理应用，使用 Wails、Go 和 Vue 3 + TypeScript 构建。它提供直观的界面来管理、监控和控制 Windows、macOS 和 Linux 上的后台进程。
 
 ## 截图预览
 
@@ -59,28 +59,28 @@ ProcHub 是一个跨平台的桌面进程管理应用，使用 Wails、Go 和 Vu
 
 ## 命令行工具
 
-ProcHub 在同一可执行文件中内置了命令行工具：不带子命令启动时照常打开界面，带子命令时执行 CLI，并通过本地控制接口与运行中的应用通信（启动时会把端口与令牌写入数据目录的 `auth.json`）。
+AgentHub 在同一可执行文件中内置了命令行工具：不带子命令启动时照常打开界面，带子命令时执行 CLI，并通过本地控制接口与运行中的应用通信（启动时会把端口与令牌写入数据目录的 `auth.json`）。
 
 ```bash
-# 创建 prochub 命令，指向已安装的应用（macOS）
+# 创建 agenthub 命令，指向已安装的应用（macOS）
 make cli
 
-prochub process list                       # 列出全部进程
-prochub process start <id>                 # 启动进程
-prochub process stop <id>                  # 停止进程
-prochub process logs <id> --tail 200       # 查看最后 200 行日志
-prochub process logs <id> --follow         # 持续输出新增日志
-prochub config get                         # 查看当前配置
-prochub config set theme light|dark        # 设置明暗主题
-prochub config set language zh|en          # 设置界面语言
-prochub config set autostart on|off        # 设置开机自动启动
-prochub config set autostart-wsl on|off    # 设置开机时自动启动 WSL
-prochub wsl status                         # 查看 WSL 运行状态
-prochub wsl start                          # 启动 WSL
-prochub wsl stop                           # 停止 WSL
-prochub wsl restart                        # 重启 WSL
-prochub status                             # 查看运行状态
-prochub version                            # 查看版本
+agenthub process list                       # 列出全部进程
+agenthub process start <id>                 # 启动进程
+agenthub process stop <id>                  # 停止进程
+agenthub process logs <id> --tail 200       # 查看最后 200 行日志
+agenthub process logs <id> --follow         # 持续输出新增日志
+agenthub config get                         # 查看当前配置
+agenthub config set theme light|dark        # 设置明暗主题
+agenthub config set language zh|en          # 设置界面语言
+agenthub config set autostart on|off        # 设置开机自动启动
+agenthub config set autostart-wsl on|off    # 设置开机时自动启动 WSL
+agenthub wsl status                         # 查看 WSL 运行状态
+agenthub wsl start                          # 启动 WSL
+agenthub wsl stop                           # 停止 WSL
+agenthub wsl restart                        # 重启 WSL
+agenthub status                             # 查看运行状态
+agenthub version                            # 查看版本
 ```
 
 进程日志文件保存在数据目录（`<dataDir>/<logDir>/<id>`），因此界面打开时也可用 `logs` 读取。
@@ -119,7 +119,7 @@ wails build
 
 ## 💬 交流沟通
 
-> 添加好友时备注 "ProcHub"
+> 添加好友时备注 "AgentHub"
 
 | 微信交流群 | QQ 交流群 |
 |:----------:|:---------:|

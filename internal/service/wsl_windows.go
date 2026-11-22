@@ -25,7 +25,7 @@ const wslCommandTimeout = 30 * time.Second
 const wslBootTimeout = 120 * time.Second
 
 // hiddenSysProcAttr launches console programs without ever creating a visible
-// console window. ProcHub is a GUI application, so a bare exec.Command would
+// console window. AgentHub is a GUI application, so a bare exec.Command would
 // otherwise flash a black console window on every wsl.exe call.
 func hiddenSysProcAttr() *syscall.SysProcAttr {
 	return &syscall.SysProcAttr{

@@ -8,8 +8,8 @@ import (
 )
 
 // appDirName is the application root directory name under the user home.
-// It holds ~/.prochub/client.json which stores the data root override.
-const appDirName = ".prochub"
+// It holds ~/.agenthub/client.json which stores the data root override.
+const appDirName = ".agenthub"
 
 // dataDirName is the default data directory name under the app root.
 const dataDirName = "data"
@@ -21,9 +21,9 @@ const clientConfigName = "client.json"
 // The packaged release can inject it (e.g. via LSEnvironment in Info.plist)
 // to keep real user data isolated from the default directory used by dev
 // tests and seed scripts.
-const envDataRoot = "PROCHUB_DATA_ROOT"
+const envDataRoot = "AGENTHUB_DATA_ROOT"
 
-// clientConfig mirrors ~/.prochub/client.json.
+// clientConfig mirrors ~/.agenthub/client.json.
 type clientConfig struct {
 	// DataRoot overrides the default data directory (supports ~/ expansion).
 	DataRoot string `json:"dataRoot"`
@@ -31,7 +31,7 @@ type clientConfig struct {
 
 // DataDir returns the application data directory and creates it if it does
 // not exist yet.
-// Priority: PROCHUB_DATA_ROOT env var > client.json dataRoot > ~/.prochub/data.
+// Priority: AGENTHUB_DATA_ROOT env var > client.json dataRoot > ~/.agenthub/data.
 func DataDir() (string, error) {
 	dir := ""
 	if env := dataRootFromEnv(); env != "" {
@@ -57,7 +57,7 @@ func DataDir() (string, error) {
 }
 
 // IsDefaultDataDir reports whether the effective data directory resolves to
-// the built-in default (~/.prochub/data). It returns true when either path
+// the built-in default (~/.agenthub/data). It returns true when either path
 // cannot be resolved so callers never advertise a custom location by mistake.
 func IsDefaultDataDir() bool {
 	def, err := defaultDataRoot()
@@ -81,13 +81,13 @@ func MustDataDir() string {
 	return dir
 }
 
-// dataRootFromEnv resolves the PROCHUB_DATA_ROOT override. It returns an
+// dataRootFromEnv resolves the AGENTHUB_DATA_ROOT override. It returns an
 // empty string when the variable is unset or blank.
 func dataRootFromEnv() string {
 	return strings.TrimSpace(os.Getenv(envDataRoot))
 }
 
-// loadClientConfig reads ~/.prochub/client.json, creating it with the default
+// loadClientConfig reads ~/.agenthub/client.json, creating it with the default
 // dataRoot when it does not exist. On any read/parse error it falls back to
 // the default config so the app always starts.
 func loadClientConfig() (clientConfig, error) {
@@ -119,7 +119,7 @@ func loadClientConfig() (clientConfig, error) {
 	return cfg, nil
 }
 
-// clientConfigPath returns the path of ~/.prochub/client.json, creating the
+// clientConfigPath returns the path of ~/.agenthub/client.json, creating the
 // app root directory if needed.
 func clientConfigPath() (string, error) {
 	root, err := appRootDir()
@@ -129,7 +129,7 @@ func clientConfigPath() (string, error) {
 	return filepath.Join(root, clientConfigName), nil
 }
 
-// appRootDir returns ~/.prochub, creating it if it does not exist yet.
+// appRootDir returns ~/.agenthub, creating it if it does not exist yet.
 func appRootDir() (string, error) {
 	home, err := homeDir()
 	if err != nil {
@@ -142,7 +142,7 @@ func appRootDir() (string, error) {
 	return dir, nil
 }
 
-// defaultDataRoot returns the default data directory ~/.prochub/data.
+// defaultDataRoot returns the default data directory ~/.agenthub/data.
 func defaultDataRoot() (string, error) {
 	root, err := appRootDir()
 	if err != nil {

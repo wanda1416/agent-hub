@@ -30,7 +30,7 @@ func TestOrderBySpeedPutsReachableFirst(t *testing.T) {
 }
 
 func TestDownloadAndVerify(t *testing.T) {
-	payload := []byte("hello prochub update")
+	payload := []byte("hello agenthub update")
 	sum := sha256.Sum256(payload)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", "20")
@@ -39,7 +39,7 @@ func TestDownloadAndVerify(t *testing.T) {
 	defer server.Close()
 
 	asset := Asset{
-		Name:   "ProcHub-test.bin",
+		Name:   "AgentHub-test.bin",
 		Size:   int64(len(payload)),
 		SHA256: hex.EncodeToString(sum[:]),
 		URLs:   []string{server.URL},
@@ -97,13 +97,13 @@ func TestDownloadReportsProgress(t *testing.T) {
 }
 
 func TestInstallRefusesWhileProcessesRun(t *testing.T) {
-	target := filepath.Join(t.TempDir(), "ProcHub.AppImage")
+	target := filepath.Join(t.TempDir(), "AgentHub.AppImage")
 	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	payload := []byte("new-binary")
 	sum := sha256.Sum256(payload)
-	downloaded := filepath.Join(t.TempDir(), "ProcHub-new.AppImage")
+	downloaded := filepath.Join(t.TempDir(), "AgentHub-new.AppImage")
 	if err := os.WriteFile(downloaded, payload, 0o755); err != nil {
 		t.Fatal(err)
 	}

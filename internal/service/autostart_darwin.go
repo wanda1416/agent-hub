@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"prochub/internal/platform"
+	"agenthub/internal/platform"
 )
 
 const launchAgentTemplate = `<?xml version="1.0" encoding="UTF-8"?>

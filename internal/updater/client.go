@@ -15,7 +15,7 @@ import (
 
 const (
 	// DefaultRepo is used by the GitHub fallback when the backend is unreachable.
-	DefaultRepo = "modstart-lib/prochub"
+	DefaultRepo = "wanda1416/agent-hub"
 )
 
 // Client talks to the update backend and falls back to GitHub Releases.
@@ -315,7 +315,7 @@ type assetNameParts struct {
 }
 
 func parseAssetName(name string) *assetNameParts {
-	// ProcHub-<version>-<os>-<arch>.<ext>
+	// AgentHub-<version>-<os>-<arch>.<ext>
 	ext := ""
 	switch {
 	case strings.HasSuffix(name, ".AppImage"):
@@ -333,7 +333,7 @@ func parseAssetName(name string) *assetNameParts {
 	}
 	base := strings.TrimSuffix(name, "."+ext)
 	parts := strings.Split(base, "-")
-	if len(parts) < 4 || parts[0] != "ProcHub" {
+	if len(parts) < 4 || parts[0] != "AgentHub" {
 		return nil
 	}
 	arch := parts[len(parts)-1]

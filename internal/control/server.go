@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"prochub/internal/process"
+	"agenthub/internal/process"
 )
 
 // TokenHeader is the HTTP header carrying the auth token.
-const TokenHeader = "X-ProcHub-Token"
+const TokenHeader = "X-AgentHub-Token"
 
 // DefaultPort is the first port tried by the control server.
 const DefaultPort = 53093

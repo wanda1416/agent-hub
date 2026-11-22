@@ -47,7 +47,7 @@ func checkAppImageDependencies(path string) error {
 }
 
 func appImageNeededLibraries(path string) ([]string, error) {
-	tmp, err := os.MkdirTemp("", "prochub-appimage-check-")
+	tmp, err := os.MkdirTemp("", "agenthub-appimage-check-")
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func findAppImageBinary(root string) (string, error) {
 	for _, candidate := range candidates {
 		info, err := os.Stat(candidate)
 		if err == nil && info.Mode().IsRegular() {
-			if strings.EqualFold(filepath.Base(candidate), "prochub") {
+			if strings.EqualFold(filepath.Base(candidate), "agenthub") {
 				return candidate, nil
 			}
 		}

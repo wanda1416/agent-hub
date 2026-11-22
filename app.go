@@ -15,22 +15,22 @@ import (
 	"sync"
 	"time"
 
-	"prochub/internal/config"
-	"prochub/internal/control"
-	"prochub/internal/logging"
-	"prochub/internal/platform"
-	"prochub/internal/process"
-	"prochub/internal/service"
-	"prochub/internal/store"
-	"prochub/internal/updater"
+	"agenthub/internal/config"
+	"agenthub/internal/control"
+	"agenthub/internal/logging"
+	"agenthub/internal/platform"
+	"agenthub/internal/process"
+	"agenthub/internal/service"
+	"agenthub/internal/store"
+	"agenthub/internal/updater"
 
 	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const (
-	AppName        = "prochub"
-	AppDisplayName = "ProcHub"
+	AppName        = "agenthub"
+	AppDisplayName = "AgentHub"
 )
 
 // App struct
@@ -97,7 +97,7 @@ func NewApp() *App {
 
 // updateEndpoint allows local testing against a development backend.
 func updateEndpoint() string {
-	if value := os.Getenv("PROCHUB_UPDATE_ENDPOINT"); value != "" {
+	if value := os.Getenv("AGENTHUB_UPDATE_ENDPOINT"); value != "" {
 		return value
 	}
 	return appConfig.VersionCheckUrl
@@ -438,7 +438,7 @@ func (a *App) SelectDirectory() (string, error) {
 type DataDirInfo struct {
 	// Path is the absolute directory where app data is stored.
 	Path string `json:"path"`
-	// IsDefault is true when Path is the built-in default (~/.prochub/data).
+	// IsDefault is true when Path is the built-in default (~/.agenthub/data).
 	IsDefault bool `json:"isDefault"`
 }
 
@@ -747,7 +747,7 @@ type AnalyticsPayload struct {
 	Data []AnalyticsEvent `json:"data"`
 }
 
-const baseURL = "https://open.tecmz.com/open_app/ProcHub"
+const baseURL = "https://open.tecmz.com/open_app/AgentHub"
 
 // AppConfig holds application-wide configuration
 var appConfig = struct {
@@ -765,13 +765,13 @@ var appConfig = struct {
 	GuideUrl        string
 	HelpUrl         string
 }{
-	Name:            "ProcHub",
-	Title:           "ProcHub",
+	Name:            "AgentHub",
+	Title:           "AgentHub",
 	Slogan:          "Manage processes easily",
 	Version:         "0.9.0-beta.1",
 	Website:         baseURL,
-	WebsiteGithub:   "https://github.com/modstart-lib/prochub",
-	WebsiteGitee:    "https://gitee.com/modstart-lib/prochub",
+	WebsiteGithub:   "https://github.com/wanda1416/agent-hub",
+	WebsiteGitee:    "",
 	ApiBaseUrl:      baseURL + "/api",
 	AnalyticsUrl:    baseURL + "/app_manager/collect",
 	VersionCheckUrl: baseURL + "/app_manager/updater",

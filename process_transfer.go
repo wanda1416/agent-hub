@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"prochub/internal/logging"
-	"prochub/internal/process"
+	"agenthub/internal/logging"
+	"agenthub/internal/process"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const (
 	// transferFormat identifies files written by ExportProcesses.
-	transferFormat = "prochub.processes"
+	transferFormat = "agenthub.processes"
 	// transferVersion is bumped when the envelope changes incompatibly. Older
 	// files are still accepted because decoding only needs "processes".
 	transferVersion = 1
@@ -106,9 +106,9 @@ func (a *App) ExportProcesses() (string, error) {
 
 	filePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		Title:           "Export Processes",
-		DefaultFilename: fmt.Sprintf("prochub-processes-%s.json", time.Now().Format("2006-01-02")),
+		DefaultFilename: fmt.Sprintf("agenthub-processes-%s.json", time.Now().Format("2006-01-02")),
 		Filters: []runtime.FileFilter{
-			{DisplayName: "ProcHub Process Files", Pattern: "*.json"},
+			{DisplayName: "AgentHub Process Files", Pattern: "*.json"},
 			{DisplayName: "All Files", Pattern: "*.*"},
 		},
 	})
@@ -139,7 +139,7 @@ func (a *App) SelectProcessImportFile() (string, error) {
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Import Processes",
 		Filters: []runtime.FileFilter{
-			{DisplayName: "ProcHub Process Files", Pattern: "*.json"},
+			{DisplayName: "AgentHub Process Files", Pattern: "*.json"},
 			{DisplayName: "All Files", Pattern: "*.*"},
 		},
 	})

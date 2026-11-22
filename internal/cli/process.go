@@ -10,14 +10,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"prochub/internal/control"
-	"prochub/internal/logging"
-	"prochub/internal/process"
+	"agenthub/internal/control"
+	"agenthub/internal/logging"
+	"agenthub/internal/process"
 )
 
 func runProcess(client *control.Client, args []string, opts Options) error {
 	if len(args) == 0 {
-		return errors.New("用法：prochub process <list|start|stop|logs>")
+		return errors.New("用法：agenthub process <list|start|stop|logs>")
 	}
 	switch args[0] {
 	case "list":
@@ -55,7 +55,7 @@ func processList(client *control.Client, opts Options) error {
 
 func processStart(client *control.Client, args []string, opts Options) error {
 	if len(args) < 1 {
-		return errors.New("请指定进程 ID：prochub process start <id>")
+		return errors.New("请指定进程 ID：agenthub process start <id>")
 	}
 	id := args[0]
 	if err := client.StartProcess(id); err != nil {
@@ -67,7 +67,7 @@ func processStart(client *control.Client, args []string, opts Options) error {
 
 func processStop(client *control.Client, args []string, opts Options) error {
 	if len(args) < 1 {
-		return errors.New("请指定进程 ID：prochub process stop <id>")
+		return errors.New("请指定进程 ID：agenthub process stop <id>")
 	}
 	id := args[0]
 	if err := client.StopProcess(id); err != nil {
@@ -84,12 +84,12 @@ func processLogs(client *control.Client, args []string, opts Options) error {
 	follow := fs.Bool("follow", false, "持续输出新增日志")
 	fs.BoolVar(follow, "f", false, "持续输出新增日志")
 	if err := fs.Parse(args); err != nil {
-		return errors.New("用法：prochub process logs <id> [--tail N] [--follow]")
+		return errors.New("用法：agenthub process logs <id> [--tail N] [--follow]")
 	}
 
 	rest := fs.Args()
 	if len(rest) < 1 {
-		return errors.New("请指定进程 ID：prochub process logs <id>")
+		return errors.New("请指定进程 ID：agenthub process logs <id>")
 	}
 	id := rest[0]
 

@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"prochub/internal/control"
+	"agenthub/internal/control"
 )
 
 // Options configures a CLI invocation.
@@ -16,31 +16,31 @@ type Options struct {
 	Stderr  io.Writer
 }
 
-const usageText = `ProcHub 命令行工具
+const usageText = `AgentHub 命令行工具
 
 用法：
-  prochub process list                        列出全部进程
-  prochub process start <id>                  启动进程
-  prochub process stop <id>                   停止进程
-  prochub process logs <id> [选项]            查看进程日志
+  agenthub process list                        列出全部进程
+  agenthub process start <id>                  启动进程
+  agenthub process stop <id>                   停止进程
+  agenthub process logs <id> [选项]            查看进程日志
       --tail N                                仅显示最后 N 行（默认 100）
       --follow, -f                            持续输出新增日志
-  prochub config get                          查看当前配置
-  prochub config set theme <light|dark>       设置明暗主题
-  prochub config set language <zh|en>         设置界面语言
-  prochub config set autostart <on|off>       设置开机自动启动
-  prochub config set autostart-wsl <on|off>   设置开机时自动启动 WSL
-  prochub wsl status                          查看 WSL 运行状态
-  prochub wsl start                           启动 WSL
-  prochub wsl stop                            停止 WSL
-  prochub wsl restart                         重启 WSL
-  prochub status                              查看运行状态
-  prochub update check                        检查最新版本
-  prochub update download                     检查并下载、校验最新版本
-  prochub version                             查看版本
+  agenthub config get                          查看当前配置
+  agenthub config set theme <light|dark>       设置明暗主题
+  agenthub config set language <zh|en>         设置界面语言
+  agenthub config set autostart <on|off>       设置开机自动启动
+  agenthub config set autostart-wsl <on|off>   设置开机时自动启动 WSL
+  agenthub wsl status                          查看 WSL 运行状态
+  agenthub wsl start                           启动 WSL
+  agenthub wsl stop                            停止 WSL
+  agenthub wsl restart                         重启 WSL
+  agenthub status                              查看运行状态
+  agenthub update check                        检查最新版本
+  agenthub update download                     检查并下载、校验最新版本
+  agenthub version                             查看版本
 
 说明：
-  命令需要 ProcHub 正在运行。程序启动时会把控制端口与令牌写入数据目录的
+  命令需要 AgentHub 正在运行。程序启动时会把控制端口与令牌写入数据目录的
   auth.json，命令行读取后与应用通信。
 
   「开机时自动启动 WSL」是独立的开机行为设置，与 wsl start/stop 手动启停
@@ -79,7 +79,7 @@ func Run(args []string, opts Options) int {
 		fmt.Fprint(opts.Stdout, usageText)
 		return 0
 	case "version", "-v", "--version":
-		fmt.Fprintf(opts.Stdout, "ProcHub %s\n", opts.Version)
+		fmt.Fprintf(opts.Stdout, "AgentHub %s\n", opts.Version)
 		return 0
 	case "update":
 		// Update commands talk to the release backend directly and must work
@@ -116,7 +116,7 @@ func Run(args []string, opts Options) int {
 
 func connectError(err error, dataDir string) string {
 	if os.IsNotExist(err) {
-		return fmt.Sprintf("ProcHub 未运行（未找到 %s），请先启动 ProcHub", control.AuthPath(dataDir))
+		return fmt.Sprintf("AgentHub 未运行（未找到 %s），请先启动 AgentHub", control.AuthPath(dataDir))
 	}
-	return fmt.Sprintf("无法连接 ProcHub：%v", err)
+	return fmt.Sprintf("无法连接 AgentHub：%v", err)
 }

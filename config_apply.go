@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"prochub/internal/config"
-	"prochub/internal/process"
+	"agenthub/internal/config"
+	"agenthub/internal/process"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )

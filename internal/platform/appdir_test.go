@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-// setupEnv points HOME/USERPROFILE at base and clears the PROCHUB_DATA_ROOT
+// setupEnv points HOME/USERPROFILE at base and clears the AGENTHUB_DATA_ROOT
 // override so each test starts from a clean environment.
 func setupEnv(t *testing.T, base string) {
 	t.Helper()
 	t.Setenv("HOME", base)
 	t.Setenv("USERPROFILE", base)
-	t.Setenv("PROCHUB_DATA_ROOT", "")
+	t.Setenv("AGENTHUB_DATA_ROOT", "")
 }
 
 // writeTestClientConfig writes a client.json at path (creating its directory).
@@ -63,7 +63,7 @@ func TestDataDirEnvOverride(t *testing.T) {
 	base := t.TempDir()
 	setupEnv(t, base)
 	envRoot := filepath.Join(base, "custom-data")
-	t.Setenv("PROCHUB_DATA_ROOT", envRoot)
+	t.Setenv("AGENTHUB_DATA_ROOT", envRoot)
 
 	dir, err := DataDir()
 	if err != nil {
@@ -84,7 +84,7 @@ func TestDataDirEnvOverride(t *testing.T) {
 func TestDataDirEnvTilde(t *testing.T) {
 	base := t.TempDir()
 	setupEnv(t, base)
-	t.Setenv("PROCHUB_DATA_ROOT", "~/custom-data")
+	t.Setenv("AGENTHUB_DATA_ROOT", "~/custom-data")
 
 	dir, err := DataDir()
 	if err != nil {
@@ -98,7 +98,7 @@ func TestDataDirEnvTilde(t *testing.T) {
 func TestDataDirEnvBlankFallsBack(t *testing.T) {
 	base := t.TempDir()
 	setupEnv(t, base)
-	t.Setenv("PROCHUB_DATA_ROOT", "   ")
+	t.Setenv("AGENTHUB_DATA_ROOT", "   ")
 
 	dir, err := DataDir()
 	if err != nil {
@@ -158,7 +158,7 @@ func TestDataDirEnvOverridesClientConfig(t *testing.T) {
 	base := t.TempDir()
 	setupEnv(t, base)
 	writeTestClientConfig(t, filepath.Join(base, appDirName, clientConfigName), `{"dataRoot": "~/client-data"}`)
-	t.Setenv("PROCHUB_DATA_ROOT", "~/env-data")
+	t.Setenv("AGENTHUB_DATA_ROOT", "~/env-data")
 
 	dir, err := DataDir()
 	if err != nil {
@@ -181,7 +181,7 @@ func TestIsDefaultDataDir(t *testing.T) {
 func TestIsDefaultDataDirEnvOverride(t *testing.T) {
 	base := t.TempDir()
 	setupEnv(t, base)
-	t.Setenv("PROCHUB_DATA_ROOT", filepath.Join(base, "custom-data"))
+	t.Setenv("AGENTHUB_DATA_ROOT", filepath.Join(base, "custom-data"))
 
 	if IsDefaultDataDir() {
 		t.Error("IsDefaultDataDir() = true, want false for an env override")
@@ -201,7 +201,7 @@ func TestIsDefaultDataDirClientConfigOverride(t *testing.T) {
 func TestIsDefaultDataDirEnvEqualsDefault(t *testing.T) {
 	base := t.TempDir()
 	setupEnv(t, base)
-	t.Setenv("PROCHUB_DATA_ROOT", filepath.Join(base, appDirName, dataDirName))
+	t.Setenv("AGENTHUB_DATA_ROOT", filepath.Join(base, appDirName, dataDirName))
 
 	if !IsDefaultDataDir() {
 		t.Error("IsDefaultDataDir() = false, want true when the override points at the default path")

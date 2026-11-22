@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"prochub/internal/platform"
+	"agenthub/internal/platform"
 )
 
 const (

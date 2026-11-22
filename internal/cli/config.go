@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"prochub/internal/control"
+	"agenthub/internal/control"
 )
 
 func runConfig(client *control.Client, args []string, opts Options) error {
 	if len(args) == 0 {
-		return errors.New("用法：prochub config <get|set>")
+		return errors.New("用法：agenthub config <get|set>")
 	}
 	switch args[0] {
 	case "get":
@@ -35,7 +35,7 @@ func configGet(client *control.Client, opts Options) error {
 
 func configSet(client *control.Client, args []string, opts Options) error {
 	if len(args) < 2 {
-		return errors.New("用法：prochub config set <theme|language|autostart|autostart-wsl> <value>")
+		return errors.New("用法：agenthub config set <theme|language|autostart|autostart-wsl> <value>")
 	}
 	key, value := args[0], args[1]
 	patch := control.ConfigPatch{}
